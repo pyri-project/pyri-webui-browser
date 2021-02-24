@@ -2,10 +2,15 @@ from typing import List, Dict, Callable, Any
 from ..plugins.panel import PyriWebUIBrowserPanelBase
 from .. import PyriWebUIBrowser
 import importlib_resources
+import js
 
 
 class PyriWelcomePanel(PyriWebUIBrowserPanelBase):
-    pass
+
+    def __init__(self, welcome_counter):
+        self.welcome_counter = welcome_counter
+
+        self.welcome_counter["$data"].count=20
 
 async def add_welcome_panel(panel_type: str, core: PyriWebUIBrowser, parent_element: Any):
     assert panel_type == "welcome"
@@ -26,12 +31,21 @@ async def add_welcome_panel(panel_type: str, core: PyriWebUIBrowser, parent_elem
         print(welcome_panel_html)
         container.getElement().html(welcome_panel_html)
 
-    welcome_panel_obj = PyriWelcomePanel()
-
     core.layout.register_component("welcome",register_welcome)
 
     core.layout.add_panel(panel_config)
     
     core.layout.add_panel_menu_item("welcome", "Welcome")
+
+    welcome_counter = js.Vue.new({
+        "el": "#welcome_counter",
+        "data": {
+            "count": 10 
+        }
+    })
+
+    print(dir(welcome_counter))
+
+    welcome_panel_obj = PyriWelcomePanel(welcome_counter)
 
     return welcome_panel_obj
