@@ -1,6 +1,7 @@
 from typing import Dict, Any
 from .golden_layout import PyriGoldenLayout
 from .plugins.panel import get_all_webui_browser_panels_infos, add_webui_browser_panel
+import js
 
 class PyriWebUIBrowser:
 
@@ -33,6 +34,8 @@ class PyriWebUIBrowser:
         print("Running PyRI WebUI Browser")
 
         self._layout.init_golden_layout()
+        js.jQuery.find("#menuContainer")[0].removeAttribute('hidden')
+
 
         await self.load_plugin_panels()
 
