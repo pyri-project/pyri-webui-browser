@@ -11,7 +11,10 @@ class JsBindDecorator:
         return self
 
     def __call__(self, *args, **kwargs):
-        self._f(self.instance,self._js_this, *args, **kwargs)
+        return self._f(self.instance,self._js_this, *args, **kwargs)
+        
+    def call(self, *args, **kwargs):
+        return self._f(self.instance,self._js_this, *args, **kwargs)
 
     def __get__(self, instance, owner):
         # self here is the instance of "somewrapper"

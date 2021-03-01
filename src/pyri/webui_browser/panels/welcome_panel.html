@@ -2,7 +2,8 @@
     <p>Select a panel on the left to begin</p>
 
     <div id="welcome_counter">Count: {{count}} <b-button variant="primary" size="sm" data-joint="2" @mousedown="increment" @mouseup="increment" v-on:contextmenu.prevent>+</b-button><b-button variant="primary" size="sm" @click="decrement" data-joint="7">-</b-button>
-    
+    <p>State seqno: {{seqno}}</p>
+    <p>State seqno_raw: {{seqno_raw}}</p>
         <div>This is</div> <div>Some text</div>
     
         <div>
