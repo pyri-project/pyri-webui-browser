@@ -2,12 +2,18 @@ from typing import List, Dict, Callable, Any
 from ..plugins.panel import PyriWebUIBrowserPanelInfo, PyriWebUIBrowserPanelPluginFactory, PyriWebUIBrowserPanelBase
 from .. import PyriWebUIBrowser
 from .welcome_panel import add_welcome_panel
+from .devices_panel import add_devices_panel
 
 _panel_infos = {
     "welcome": PyriWebUIBrowserPanelInfo(
         title="Welcome",
         panel_type="welcome",
         priority=0
+    ),
+    "devices": PyriWebUIBrowserPanelInfo(
+        title="Devices",
+        panel_type="devices",
+        priority=1000
     )
 }
 
@@ -24,6 +30,8 @@ class PyriStandardPanelsWebUIBrowserPanelPluginFactory(PyriWebUIBrowserPanelPlug
     async def add_panel(self, panel_type: str, core: PyriWebUIBrowser, parent_element: Any) -> PyriWebUIBrowserPanelBase:
         if panel_type == "welcome":
             return await add_welcome_panel(panel_type, core, parent_element)
+        elif panel_type == "devices":
+            return await add_devices_panel(panel_type, core, parent_element)
         assert False, f"Unknown panel_type \"{panel_type}\" specified"
 
 def get_webui_browser_panel_factory():

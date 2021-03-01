@@ -1,0 +1,42 @@
+<div id="active_devices_table">
+    <div class="bootstrap-table"></div>
+    <caption>Active Devices</caption>
+    <table data-toggle="table" data-search="true" data-show-columns="true" class="table table-hover table-bordered" data-card-view="true" data-show-toggle="true" data-search="true">
+        <thead>
+            <tr>
+                <th data-field="local_name">Local Name</th>
+                <th data-field="device_name">Device Name</th>
+                <th data-field="types">Device Types</th>
+                <th data-field="connected">Connected</th>
+                <th data-field="ready">Ready</th>
+                <th data-field="error">Error</th>
+                <th data-field="state_flags">State Flags</th>
+                <th data-field="actions">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <template v-for="local_name in $store.state.active_device_names">
+                <tr>
+                    <td>{{ local_name }}</td>
+                    <td>{{ $store.state.devices_states.devices_states[local_name].device.name }}</td>
+                    <td></td>
+                    <td>{{ $store.state.devices_states.devices_states[local_name].connected }}</td>
+                    <td>{{ $store.state.devices_states.devices_states[local_name].ready }}</td>
+                    <td>{{ $store.state.devices_states.devices_states[local_name].error }}</td>
+                    <td></td>
+                    <td>
+                        <a class="info" title="Device Info"><i class="fas fa-2x fa-info-circle"></i></a>&nbsp;
+                        <a class="remove" title="Remove Device"><i class="fas fa-2x fa-trash"></i></a>
+                    </td>
+                </tr>
+            </template>
+        </tbody>
+    </table>
+    </div>
+</div>
+
+<style>
+    #active_devices_table {
+        background-color: white !important;
+    }
+</style>
