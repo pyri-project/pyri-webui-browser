@@ -29,7 +29,7 @@ class PyriWelcomePanel(PyriWebUIBrowserPanelBase):
     def seqno(self,js_this,state,*args):
         try:
             devices_states = state["$store"].state.devices_states
-            return devices_states.seqno + state["$data"].count
+            return devices_states.seqno
         except AttributeError:
             return -1
         

@@ -81,3 +81,8 @@ class PyriGoldenLayout:
 
         menu_item.click(menu_click)
 
+    def select_panel(self, panel_id):
+        p = self._layout.root.contentItems[0].getItemsById(panel_id)
+        if len(p) > 0:
+            p[0].parent.setActiveContentItem(p[0])
+

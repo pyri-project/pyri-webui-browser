@@ -101,6 +101,8 @@ class PyriWebUIBrowser:
 
         # Run infinite update loop
 
+        self._layout.select_panel("welcome")
+
         while True:
             await RRN.AsyncSleep(0.1,None)
             await self.update()
