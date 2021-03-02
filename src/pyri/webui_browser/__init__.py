@@ -36,15 +36,20 @@ class PyriWebUIBrowser:
             if set(current_devices) != set(device_names):
                 state.active_device_names = device_names
 
+        def set_device_infos(state, device_infos):
+            state.device_infos = device_infos
+
         self._store = js.window.vuex_store_new({
             "state": {
                 "devices_states": {},
-                "active_device_names": []
+                "active_device_names": [],
+                "device_infos": {}
             },
             "mutations":
             {
                 "set_devices_states": set_devices_states,
-                "set_active_device_names": set_active_device_names
+                "set_active_device_names": set_active_device_names,
+                "set_device_infos": set_device_infos
             }
         })
 
@@ -175,8 +180,8 @@ class PyriWebUIBrowser:
                         except:
                             traceback.print_exc()
 
+            self.vuex_store.commit("set_device_infos", robotraconteur_data_to_plain(self._device_infos))
+
         finally:
             self._device_infos_update_running = False
-
-            print(self._device_infos)
 
