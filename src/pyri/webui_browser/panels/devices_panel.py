@@ -72,7 +72,8 @@ async def add_devices_panel(panel_type: str, core: PyriWebUIBrowser, parent_elem
         "componentName": "devices",
         "componentState": {},
         "title": "Devices",
-        "id": "devices" 
+        "id": "devices",
+        "isClosable": False
     }
 
     gl = core.layout.layout

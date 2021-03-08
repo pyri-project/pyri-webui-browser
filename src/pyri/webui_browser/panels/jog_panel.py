@@ -127,7 +127,8 @@ async def add_jog_panel(panel_type: str, core: PyriWebUIBrowser, parent_element:
         "componentName": "jog",
         "componentState": {},
         "title": "Jogging",
-        "id": "jog" 
+        "id": "jog",
+        "isClosable": False
     }
 
     gl = core.layout.layout

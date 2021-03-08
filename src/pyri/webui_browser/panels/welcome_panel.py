@@ -44,7 +44,8 @@ async def add_welcome_panel(panel_type: str, core: PyriWebUIBrowser, parent_elem
         "componentName": "welcome",
         "componentState": {},
         "title": "Welcome",
-        "id": "welcome" 
+        "id": "welcome",
+        "isClosable": False
     }
 
     gl = core.layout.layout
