@@ -1,10 +1,13 @@
-<div id="jog_panel_component">
+<div id="jog_panel_component" @mousedown="mousedown" @mouseup="mouseup" @mouseleave="mouseleave">
 <div>
     Robot: <b-form-select v-model="current_robot" :options="current_robot_options" style="width: 250px"></b-form-select>
     Status: <span v-if="!$store.state.devices_states.devices_states[current_robot].connected" style="color:red">Disconnected</span>
             <span v-else-if="$store.state.devices_states.devices_states[current_robot].error" style="color:red">Error</span>
             <span v-else-if="$store.state.devices_states.devices_states[current_robot].ready" style="color:green">Ready</span>
             <span v-else style="color:yellow">Connected</span>
+            <span v-if="$store.state.devices_states.devices_states[current_robot].connected">
+              Mode: {{ current_robot_mode }} <b-button @click="set_jog_mode">Enable Jog</b-button> <b-button @click="set_halt_mode">Halt</b-button>
+            </span>
 </div>
 
     <b-card title="Joint Jog" style="max-width: 30rem;">
@@ -14,9 +17,9 @@
               <div class="w-100"></div>
               <template v-for="(j, index) in joint_state">
                 <b-col>{{ j.lower }}</b-col>
-                <b-col><b-button @mousedown="jog_decrement_mousedown(index)" @mouseup="jog_decrement_mouseup(index)">J{{ index+1 }}-</b-button></b-col>
+                <b-col><b-button @mousedown="jog_decrement_mousedown(index)">J{{ index+1 }}-</b-button></b-col>
                 <b-col>{{ j.current }}</b-col>
-                <b-col><b-button @mousedown="jog_increment_mousedown(index)" @mouseup="jog_increment_mouseup(index)">J{{ index+1 }}+</b-button></b-col>
+                <b-col><b-button @mousedown="jog_increment_mousedown(index)">J{{ index+1 }}+</b-button></b-col>
                 <b-col>{{ j.upper }}</b-col>
                 <div class="w-100"></div>
               </template>
