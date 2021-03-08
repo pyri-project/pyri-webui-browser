@@ -57,6 +57,11 @@ class PyriWebUIBrowser:
     def loop(self):
         return self._loop
 
+    def create_task(self, task):
+        async def create_task_w():
+            await task
+        self._loop.create_task(create_task_w())
+
     @property
     def layout(self):
         return self._layout
@@ -64,6 +69,10 @@ class PyriWebUIBrowser:
     @property
     def seqno(self):
         return self._seqno
+
+    @property
+    def device_manager(self):
+        return self._device_manager
 
     async def load_plugin_panels(self):
         all_panels_u = get_all_webui_browser_panels_infos()
@@ -77,41 +86,45 @@ class PyriWebUIBrowser:
             await add_webui_browser_panel(p.panel_type, self, self._layout.layout_container)
 
     async def run(self):
-        print("Running PyRI WebUI Browser")
+        try:
+            print("Running PyRI WebUI Browser")
 
-        self._layout.init_golden_layout()
-        js.jQuery.find("#menuContainer")[0].removeAttribute('hidden')
+            self._layout.init_golden_layout()
+            js.jQuery.find("#menuContainer")[0].removeAttribute('hidden')
 
-        await self.load_plugin_panels()
+            await self.load_plugin_panels()
 
-        for i in range(100):
-            if i > 50:
-                js.window.alert("Could not connect to devices states service")
-                return
-            if "devices_states" in self._device_manager.get_device_names():
-                break
-            await RRN.AsyncSleep(0.1,None)
-            await self.update_devices()
+            for i in range(100):
+                if i > 50:
+                    js.window.alert("Could not connect to devices states service")
+                    return
+                if "devices_states" in self._device_manager.get_device_names():
+                    break
+                await RRN.AsyncSleep(0.1,None)
+                await self.update_devices()
 
-        self._device_manager.connect_device("variable_storage")        
-        self._device_manager.connect_device("devices_states")
+            self._device_manager.connect_device("variable_storage")        
+            self._device_manager.connect_device("devices_states")
+            self._device_manager.connect_device("sandbox")
 
-        self._devices_states_obj_sub = self._device_manager.get_device_subscription("devices_states")
-        self._devices_states_wire_sub = self._devices_states_obj_sub.SubscribeWire("devices_states")
+            self._devices_states_obj_sub = self._device_manager.get_device_subscription("devices_states")
+            self._devices_states_wire_sub = self._devices_states_obj_sub.SubscribeWire("devices_states")
 
-        # Run infinite update loop
+            # Run infinite update loop
 
-        self._layout.select_panel("welcome")
+            self._layout.select_panel("welcome")
 
-        while True:
-            await RRN.AsyncSleep(0.1,None)
-            await self.update()
+            while True:
+                await RRN.AsyncSleep(0.1,None)
+                await self.update()
+        except:
+            traceback.print_exc()
 
     async def update(self):
         self._seqno += 1
 
         if self._seqno == 600:
-            self._loop.call_soon(self.update_devices())
+            self.create_task(self.update_devices())
 
         res, devices_states, _ = self._devices_states_wire_sub.TryGetInValue()
 
@@ -157,7 +170,7 @@ class PyriWebUIBrowser:
                     update_devices.append(d)
                     
             if len(update_devices) > 0:
-                self._loop.call_soon(self._do_update_device_infos(update_devices))
+                self.create_task(self._do_update_device_infos(update_devices))
         except:
             traceback.print_exc()
 

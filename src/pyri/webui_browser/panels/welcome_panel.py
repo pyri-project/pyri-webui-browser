@@ -4,8 +4,6 @@ from .. import PyriWebUIBrowser
 import importlib_resources
 import js
 
-from ..util import jsbind
-
 class PyriWelcomePanel(PyriWebUIBrowserPanelBase):
 
     def __init__(self):
@@ -15,22 +13,23 @@ class PyriWelcomePanel(PyriWebUIBrowserPanelBase):
         self.vue =vue
         self.vue["$data"].count=20
 
-    @jsbind
-    def increment(self, js_this, evt):
+    
+    def increment(self,  evt):
         print(int(evt.target.getAttribute("data-joint")))
         self.vue["$data"].count+=1
 
-    @jsbind
-    def decrement(self, js_this, evt):
+    
+    def decrement(self, evt):
         print(int(evt.target.getAttribute("data-joint")))
         self.vue["$data"].count-=1
 
-    @jsbind
-    def seqno(self,js_this,state,*args):
+    def seqno(self,state,*args):
         try:
             devices_states = state["$store"].state.devices_states
             return devices_states.seqno
         except AttributeError:
+            return -1
+        except KeyError:
             return -1
         
         
@@ -72,12 +71,12 @@ async def add_welcome_panel(panel_type: str, core: PyriWebUIBrowser, parent_elem
             "increment": welcome_panel_obj.increment,
             "decrement": welcome_panel_obj.decrement
         },
-        "computed": js.Vuex.mapState(
-            {
-                "seqno_raw": "devices_states.seqno",
-                "seqno": welcome_panel_obj.seqno
-            }
-        )
+        "computed": 
+        {
+            "seqno_raw": "devices_states.seqno",
+            "seqno": welcome_panel_obj.seqno
+        }
+        
     })
 
     welcome_panel_obj.init_vue(welcome_counter)

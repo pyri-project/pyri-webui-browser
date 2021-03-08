@@ -48,7 +48,7 @@ class PyriGoldenLayout:
     def init_golden_layout(self):
         
         layoutContainer = js.jQuery.find("#layoutContainer")
-        self._layout =js.golden_layout_new(_golden_layout_config, layoutContainer)
+        self._layout =js.GoldenLayout.new(_golden_layout_config, layoutContainer)
 
 
         self._layout.init()

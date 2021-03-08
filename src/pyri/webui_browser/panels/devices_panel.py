@@ -5,8 +5,6 @@ import importlib_resources
 import js
 import traceback
 
-from ..util import jsbind
-
 class PyriDevicesPanel(PyriWebUIBrowserPanelBase):
 
     def __init__(self):
@@ -15,16 +13,13 @@ class PyriDevicesPanel(PyriWebUIBrowserPanelBase):
     def init_vue(self,vue):
         self.vue = vue
 
-    @jsbind
-    def device_info(self, js_this, dev_name):
+    def device_info(self,  dev_name):
         js.window.alert(f"Device info: {dev_name}")
 
-    @jsbind
-    def device_remove(self, js_this, dev_name):
+    def device_remove(self, dev_name):
         js.window.confirm(f"Remove device: {dev_name}?")
 
-    @jsbind
-    def implemented_types(self, js_this, local_name):
+    def implemented_types(self, local_name):
         if self.vue is None:
             return ""
 
@@ -45,8 +40,7 @@ class PyriDevicesPanel(PyriWebUIBrowserPanelBase):
             return ""
         return " ".join(implemented_types)
 
-    @jsbind
-    def device_state_flags(self, js_this, local_name):
+    def device_state_flags(self, local_name):
         if self.vue is None:
             return ""
         

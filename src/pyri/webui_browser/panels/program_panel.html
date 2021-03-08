@@ -1,0 +1,40 @@
+<div id="procedures_table">
+    <b-button @click="refresh_procedure_table">Refresh Table</b-button>
+    <div class="bootstrap-table"></div>
+    <caption>Procedures</caption>
+    <table data-toggle="table" data-search="true" data-show-columns="true" class="table table-hover table-bordered" data-card-view="true" data-show-toggle="true" data-search="true">
+        <thead>
+            <tr>
+                <th data-field="procedure_name">Name</th>
+                <th data-field="procedure_type">Type</th>
+                <th data-field="docstring">Docstring</th>
+                <th data-field="modified">Modified</th>                
+                <th data-field="actions">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <template v-for="p in procedures">
+                <tr>
+                    <td>{{ p.procedure_name }}</td>
+                    <td>{{ p.procedure_type }}</td>
+                    <td>{{ p.docstring }}</td>
+                    <td>{{ p.modified }}</td>
+                    <td>
+                        <a class="play" title="Run Procedure" @click="procedure_run(p.procedure_name)"><i class="fas fa-2x fa-play"></i></a>&nbsp;
+                        <a class="open" title="Open Procedure" @click="procedure_open(p.procedure_name)"><i class="fas fa-2x fa-folder-open"></i></a>&nbsp;
+                        <a class="copy" title="Copy Procedure" @click="procedure_copy(p.procedure_name)"><i class="fas fa-2x fa-copy"></i></a>&nbsp;
+                        <a class="info" title="Procedure Info" @click="procedure_info(p.procedure_name)"><i class="fas fa-2x fa-info-circle"></i></a>&nbsp;
+                        <a class="remove" title="Delete Procedure" @click="procedure_delete(p.procedure_name)"><i class="fas fa-2x fa-trash"></i></a>
+                    </td>
+                </tr>
+            </template>
+        </tbody>
+    </table>
+    </div>
+</div>
+
+<style>
+    #procedures_table {
+        background-color: white !important;
+    }
+</style>

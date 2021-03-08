@@ -3,6 +3,8 @@ from ..plugins.panel import PyriWebUIBrowserPanelInfo, PyriWebUIBrowserPanelPlug
 from .. import PyriWebUIBrowser
 from .welcome_panel import add_welcome_panel
 from .devices_panel import add_devices_panel
+from. program_panel import add_program_panel
+from .jog_panel import add_jog_panel
 
 _panel_infos = {
     "welcome": PyriWebUIBrowserPanelInfo(
@@ -14,6 +16,16 @@ _panel_infos = {
         title="Devices",
         panel_type="devices",
         priority=1000
+    ),
+    "jog": PyriWebUIBrowserPanelInfo(
+        title="Jogging",
+        panel_type="jog",
+        priority=3000
+    ),
+    "program": PyriWebUIBrowserPanelInfo(
+        title="Program",
+        panel_type="program",
+        priority=4000
     )
 }
 
@@ -32,6 +44,10 @@ class PyriStandardPanelsWebUIBrowserPanelPluginFactory(PyriWebUIBrowserPanelPlug
             return await add_welcome_panel(panel_type, core, parent_element)
         elif panel_type == "devices":
             return await add_devices_panel(panel_type, core, parent_element)
+        elif panel_type == "jog":
+            return await add_jog_panel(panel_type, core, parent_element)
+        elif panel_type == "program":
+            return await add_program_panel(panel_type, core, parent_element)
         assert False, f"Unknown panel_type \"{panel_type}\" specified"
 
 def get_webui_browser_panel_factory():
