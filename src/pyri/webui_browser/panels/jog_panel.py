@@ -4,6 +4,7 @@ from .. import PyriWebUIBrowser
 import importlib_resources
 import js
 import traceback
+from RobotRaconteur.Client import *
 
 import numpy as np
 
@@ -366,7 +367,7 @@ class PyriJogPanel(PyriWebUIBrowserPanelBase):
         except:
             traceback.print_exc()
 
-    def move_to_angles(self,evt):
+    def get_target_joint_angles(self):
         try:
             current_robot = self.vue["$data"].current_robot
             joint_info = self.vue["$store"].state.device_infos[current_robot].extended_info["com.robotraconteur.robotics.robot.RobotInfo"].joint_info
@@ -386,8 +387,91 @@ class PyriJogPanel(PyriWebUIBrowserPanelBase):
             traceback.print_exc()
             js.alert("Invalid joint angle entries")
             return
+        return target_angles
+
+    def set_target_joint_angles(self,target_angles):
+        # TODO: Verify the length and boards of target_angles
+        try:
+            for i in range(len(target_angles)):
+                js.jQuery.find(f"#j{i}_angle_in")[0].value = np.rad2deg(target_angles[i])
+        except:
+            traceback.print_exc()
+            js.alert("Invalid joint angle entries")
+            return
+        return target_angles
+
+    def move_to_angles(self,evt):
+        target_angles = self.get_target_joint_angles()
 
         self.core.create_task(self.do_move_to_angles(target_angles))
+
+    async def do_load_joint_pose(self):
+        try:
+            selected_pose = self.vue["$data"].load_joint_pose_selected
+            var_storage = self.device_manager.get_device_subscription("variable_storage").GetDefaultClient()
+            joint_pose = await var_storage.async_getf_variable_value("globals",selected_pose,None)
+            self.set_target_joint_angles(joint_pose.data)
+            
+        except:
+            traceback.print_exc()
+            js.alert(f"Refresh joint pose failed:\n\n{traceback.format_exc()}")
+
+    def load_joint_pose(self,evt):
+        self.core.create_task(self.do_load_joint_pose())
+        
+    async def do_refresh_joint_pose_options(self):
+        try:
+            var_storage = self.device_manager.get_device_subscription("variable_storage").GetDefaultClient()
+            joint_pose_names = await var_storage.async_filter_variables("globals",".*",["joint_pose"],None)
+            self.vue["$data"].load_joint_pose_options = joint_pose_names
+        except:
+            traceback.print_exc()
+            js.alert(f"Save joint pose failed:\n\n{traceback.format_exc()}")
+
+    def refresh_joint_pose_options(self,evt):
+        self.core.create_task(self.do_refresh_joint_pose_options())
+
+    async def do_save_joint_pose(self, name, joint_angles):
+        try:
+            var_storage = self.device_manager.get_device_subscription("variable_storage").GetDefaultClient()
+            var_consts = RRN.GetConstants('tech.pyri.variable_storage', var_storage)
+            variable_persistence = var_consts["VariablePersistence"]
+            variable_protection_level = var_consts["VariableProtectionLevel"]
+                                    
+            await var_storage.async_add_variable2("globals", name ,"double[]", \
+                RR.VarValue(np.array(joint_angles,dtype=np.float64),"double[]"), ['joint_pose'], {}, variable_persistence["const"], None, variable_protection_level["read_write"], \
+                    [], "Saved joint pose", False, None)
+        except:
+            traceback.print_exc()
+            js.alert(f"Save joint pose failed:\n\n{traceback.format_exc()}")
+
+    def save_joint_pose(self,evt):
+        joint_pose_name = js.prompt("Joint Pose Name")
+        current_robot = self.vue["$data"].current_robot
+        joint_angles = None
+        e_state = self.vue["$store"].state.devices_states.devices_states[current_robot].state
+        if e_state is not None:
+            for e in e_state:
+                if e.type == "com.robotraconteur.robotics.robot.RobotState":
+                    joint_angles = [j for j in e.state_data.joint_position]
+        if joint_angles is None:
+            js.alert("Could not determine robot pose")
+            return
+        self.core.create_task(self.do_save_joint_pose(joint_pose_name,joint_angles))
+
+    async def do_delete_joint_pose(self):
+        try:
+            selected_pose = self.vue["$data"].load_joint_pose_selected
+            var_storage = self.device_manager.get_device_subscription("variable_storage").GetDefaultClient()
+            await var_storage.async_delete_variable("globals",selected_pose,None)
+            
+        except:
+            traceback.print_exc()
+            js.alert(f"Save joint pose failed:\n\n{traceback.format_exc()}")
+
+    def delete_joint_pose(self,evt):
+        self.core.create_task(self.do_delete_joint_pose())
+
 
 
 async def add_jog_panel(panel_type: str, core: PyriWebUIBrowser, parent_element: Any):
@@ -424,7 +508,9 @@ async def add_jog_panel(panel_type: str, core: PyriWebUIBrowser, parent_element:
         "store": core.vuex_store,
         "data":
         {
-            "current_robot": None
+            "current_robot": None,
+            "load_joint_pose_selected": "",
+            "load_joint_pose_options": []
         },
         "methods":
         {
@@ -437,7 +523,11 @@ async def add_jog_panel(panel_type: str, core: PyriWebUIBrowser, parent_element:
             "mouseleave": jog_panel_obj.mouseleave_evt,
             "jog_cart_decrement_mousedown": jog_panel_obj.jog_cart_decrement_mousedown,
             "jog_cart_increment_mousedown": jog_panel_obj.jog_cart_increment_mousedown,
-            "move_to_angles": jog_panel_obj.move_to_angles
+            "move_to_angles": jog_panel_obj.move_to_angles,
+            "load_joint_pose": jog_panel_obj.load_joint_pose,
+            "refresh_joint_pose_options": jog_panel_obj.refresh_joint_pose_options,
+            "save_joint_pose": jog_panel_obj.save_joint_pose,
+            "delete_joint_pose": jog_panel_obj.delete_joint_pose
 
         },
         "computed": 

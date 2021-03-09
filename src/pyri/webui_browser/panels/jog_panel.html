@@ -27,6 +27,12 @@
               <b-col>&nbsp;</b-col><b-col>&nbsp;</b-col><b-col>&nbsp;</b-col><b-col>&nbsp;</b-col><b-col>&nbsp;</b-col><b-col><button id="j_angles_submit_btn" type="button" @click="move_to_angles">Move to angles!</button></b-col>
             </b-row>
           </b-container>
+
+          <b-button @click="save_joint_pose">Save Pose</b-button><br>
+          <b-form-select v-model="load_joint_pose_selected" :options="load_joint_pose_options" style="width: 250px"></b-form-select><br>
+          <b-button @click="load_joint_pose">Load Pose</b-button>
+          <b-button @click="delete_joint_pose">Delete Pose</b-button>
+          <b-button @click="refresh_joint_pose_options">Refresh</b-button>
     </b-card>
 
     <b-card title="Task Space Jog" style="max-width: 20rem; display:inline-block; vertical-align: top;">
