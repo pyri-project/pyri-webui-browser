@@ -10,7 +10,7 @@
             </span>
 </div>
 
-    <b-card title="Joint Jog" style="max-width: 30rem;">
+    <b-card title="Joint Jog" style="max-width: 30rem; display:inline-block;">
         <b-container class="bv-example-row">
             <b-row class="no-gutters">
               <b-col>Min<br>(deg)</b-col><b-col></b-col><b-col>Current<br>(deg)</b-col><b-col></b-col><b-col>Max<br>deg</b-col>
@@ -25,6 +25,52 @@
               </template>
             </b-row>
           </b-container>
+    </b-card>
+
+    <b-card title="Task Space Jog" style="max-width: 20rem; display:inline-block;">
+      <table id="table_TaskSpaceControl" border="0" >
+        <Tr>
+            <TH align="center" COLSPAN="2"> <H4>Position</H4> </TH>
+        </Tr>
+        <tr>
+            <td> <button id="X_neg_btn" type="button" @mousedown="jog_cart_decrement_mousedown(0)" style="width: 100%">X-</button> </td>
+            <td> <button id="X_pos_btn" type="button" @mousedown="jog_cart_increment_mousedown(0)" style="width: 100%">X+</button> </td>
+        </tr>
+        <tr>
+            <td > <button id="Y_neg_btn" type="button" @mousedown="jog_cart_decrement_mousedown(1)" style="width: 100%">Y-</button> </td>
+            <td > <button id="Y_pos_btn" type="button" @mousedown="jog_cart_increment_mousedown(1)" style="width: 100%">Y+</button> </td>
+        </tr>         
+        <tr>
+            <td > <button id="Z_neg_btn" type="button" @mousedown="jog_cart_decrement_mousedown(2)" style="width: 100%">Z-</button> </td>
+            <td > <button id="Z_pos_btn" type="button" @mousedown="jog_cart_increment_mousedown(2)" style="width: 100%">Z+</button> </td>
+        </tr>
+        <Tr>
+            <TH align="center" COLSPAN="2"> <H4><br>Orientation</H4> </TH>
+        </Tr>      
+        <tr>
+            <td > <button id="theta_X_neg_btn" type="button" @mousedown="jog_cart_decrement_mousedown(3)" style="width: 100%">&theta;<sub>X</sub>-</button> </td>
+            <td > <button id="theta_X_pos_btn" type="button" @mousedown="jog_cart_increment_mousedown(3)" style="width: 100%">&theta;<sub>X</sub>+</button> </td>
+        </tr>  
+        <tr>
+            <td > <button id="theta_Y_neg_btn" type="button" @mousedown="jog_cart_decrement_mousedown(4)" style="width: 100%">&theta;<sub>Y</sub>-</button> </td>
+            <td > <button id="theta_Y_pos_btn" type="button" @mousedown="jog_cart_increment_mousedown(4)" style="width: 100%">&theta;<sub>Y</sub>+</button> </td>
+        </tr>
+        <tr>
+            <td >  <button id="theta_Z_neg_btn" type="button" @mousedown="jog_cart_decrement_mousedown(5)" style="width: 100%">&theta;<sub>Z</sub>-</button> </td>
+            <td > <button id="theta_Z_pos_btn" type="button" @mousedown="jog_cart_increment_mousedown(5)" style="width: 100%">&theta;<sub>Z</sub>+</button> </td>
+        </tr>
+        <tr>
+            <td COLSPAN="2">
+            <table style="text-align: center; display: block; border: 1px solid; ">
+                <Tr> <TH > <H4>Current Pose wrt Base</H4> </TH> </Tr>
+                <tr> <td align="left"> ZYX Angles (deg):  </td> </tr>
+                <tr> <td> <div align="left" id="cur_ZYX_angles"></div> </td></tr>
+                <tr> <td align="left"> Position (m): </td> </tr>
+                <tr> <td> <div align="left" id="cur_position"></div>  </td></tr>    
+            </table>
+            </td>
+        </tr>  
+    </table>
     </b-card>
 
 </div>
