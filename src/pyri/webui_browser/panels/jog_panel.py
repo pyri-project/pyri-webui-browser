@@ -7,6 +7,32 @@ import traceback
 
 import numpy as np
 
+def R2rpy(R):
+    assert np.linalg.norm(R[0:2,0]) > np.finfo(float).eps * 10.0, "Singular rpy requested"
+    
+    r=np.arctan2(R[2,1],R[2,2])
+    y=np.arctan2(R[1,0], R[0,0])
+    p=np.arctan2(-R[2,0], np.linalg.norm(R[2,1:3]))
+        
+    return (r,p,y)
+
+def q2R(q):
+   
+    I = np.identity(3)
+    qhat = hat(q[1:4])
+    qhat2 = qhat.dot(qhat)
+    return I + 2*q[0]*qhat + 2*qhat2
+
+def hat(k):
+    khat=np.zeros((3,3))
+    khat[0,1]=-k[2]
+    khat[0,2]=k[1]
+    khat[1,0]=k[2]
+    khat[1,2]=-k[0]
+    khat[2,0]=-k[1]
+    khat[2,1]=k[0]    
+    return khat
+
 class PyriJogPanel(PyriWebUIBrowserPanelBase):
     def __init__(self, device_manager, core):
         self.vue = None
@@ -237,6 +263,46 @@ class PyriJogPanel(PyriWebUIBrowserPanelBase):
         #self.jog_joints(joint_index+1,+1)
         print(f"jog_cart_increment_mousedown: {joint_index}")
 
+    def cur_ZYX_angles(self, vue, *args):
+        current_robot = vue["$data"].current_robot
+        if current_robot is None:
+            return ""
+
+        current_rpy = ""
+        try:
+            e_state = vue["$store"].state.devices_states.devices_states[current_robot].state
+            if e_state is not None:
+                for e in e_state:
+                    if e.type == "com.robotraconteur.robotics.robot.RobotState":
+                        
+                        current_rpy = np.array2string(np.rad2deg(R2rpy(q2R(np.array([e.state_data.kin_chain_tcp[0][0][x] for x in range(4)],dtype=np.float64)))),formatter={'float_kind':lambda x: "%.2f" % x})
+        except AttributeError:
+            traceback.print_exc()
+        except KeyError:
+            traceback.print_exc()
+
+        return current_rpy
+
+    def cur_position(self, vue, *args):
+
+        current_robot = vue["$data"].current_robot
+        if current_robot is None:
+            return ""
+
+        current_position = ""
+        try:
+            e_state = vue["$store"].state.devices_states.devices_states[current_robot].state
+            if e_state is not None:
+                for e in e_state:
+                    if e.type == "com.robotraconteur.robotics.robot.RobotState":
+                        current_position = np.array2string(np.array([e.state_data.kin_chain_tcp[0][1][x] for x in range(3)],dtype=np.float64), formatter={'float_kind':lambda x: "%.2f" % x})
+        except AttributeError:
+            traceback.print_exc()
+        except KeyError:
+            traceback.print_exc()
+
+        return current_position
+
 
 async def add_jog_panel(panel_type: str, core: PyriWebUIBrowser, parent_element: Any):
 
@@ -291,7 +357,9 @@ async def add_jog_panel(panel_type: str, core: PyriWebUIBrowser, parent_element:
         {
             "current_robot_options": jog_panel_obj.current_robot_options,
             "joint_state": jog_panel_obj.joint_state,
-            "current_robot_mode": jog_panel_obj.current_robot_mode
+            "current_robot_mode": jog_panel_obj.current_robot_mode,
+            "cur_ZYX_angles": jog_panel_obj.cur_ZYX_angles,
+            "cur_position": jog_panel_obj.cur_position
         },
         "watch":
         {
