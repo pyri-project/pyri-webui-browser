@@ -13,7 +13,7 @@
     <b-card title="Joint Jog" style="max-width: 30rem; display:inline-block; vertical-align: top;">
         <b-container class="bv-example-row">
             <b-row class="no-gutters">
-              <b-col>Min<br>(deg)</b-col><b-col></b-col><b-col>Current<br>(deg)</b-col><b-col></b-col><b-col>Max<br>deg</b-col>
+              <b-col>Min<br>(deg)</b-col><b-col></b-col><b-col>Current<br>(deg)</b-col><b-col></b-col><b-col>Max<br>deg</b-col><b-col>Angle Input<br>(deg)</b-col>
               <div class="w-100"></div>
               <template v-for="(j, index) in joint_state">
                 <b-col>{{ j.lower }}</b-col>
@@ -21,8 +21,10 @@
                 <b-col>{{ j.current }}</b-col>
                 <b-col><b-button @mousedown="jog_increment_mousedown(index)">J{{ index+1 }}+</b-button></b-col>
                 <b-col>{{ j.upper }}</b-col>
+                <b-col><input type="text" :id="'j' + index + '_angle_in'" :placeholder="j.current" value="0" type="number"></b-col>
                 <div class="w-100"></div>
               </template>
+              <b-col>&nbsp;</b-col><b-col>&nbsp;</b-col><b-col>&nbsp;</b-col><b-col>&nbsp;</b-col><b-col>&nbsp;</b-col><b-col><button id="j_angles_submit_btn" type="button" @click="move_to_angles">Move to angles!</button></b-col>
             </b-row>
           </b-container>
     </b-card>

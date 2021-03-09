@@ -359,6 +359,36 @@ class PyriJogPanel(PyriWebUIBrowserPanelBase):
 
         return current_position
 
+    async def do_move_to_angles(self,joint_angles):
+        try:
+            jog, _ = await self.get_jog()
+            await jog.async_jog_joints_to_angles(joint_angles,None)
+        except:
+            traceback.print_exc()
+
+    def move_to_angles(self,evt):
+        try:
+            current_robot = self.vue["$data"].current_robot
+            joint_info = self.vue["$store"].state.device_infos[current_robot].extended_info["com.robotraconteur.robotics.robot.RobotInfo"].joint_info
+        except:
+            traceback.print_exc()
+            js.alert("Robot not selected!")
+            return
+
+        n_joints = len(joint_info)
+        target_angles = [0.0]*n_joints
+        try:
+            for i in range(n_joints):                
+                target_angles[i] = float(js.jQuery.find(f"#j{i}_angle_in")[0].value)
+
+            target_angles = np.deg2rad(target_angles)
+        except:
+            traceback.print_exc()
+            js.alert("Invalid joint angle entries")
+            return
+
+        self.core.create_task(self.do_move_to_angles(target_angles))
+
 
 async def add_jog_panel(panel_type: str, core: PyriWebUIBrowser, parent_element: Any):
 
@@ -407,6 +437,7 @@ async def add_jog_panel(panel_type: str, core: PyriWebUIBrowser, parent_element:
             "mouseleave": jog_panel_obj.mouseleave_evt,
             "jog_cart_decrement_mousedown": jog_panel_obj.jog_cart_decrement_mousedown,
             "jog_cart_increment_mousedown": jog_panel_obj.jog_cart_increment_mousedown,
+            "move_to_angles": jog_panel_obj.move_to_angles
 
         },
         "computed": 
