@@ -158,11 +158,28 @@ class PyriJogPanel(PyriWebUIBrowserPanelBase):
 
         return await jog_service.async_get_jog(current_robot,None)
 
+    def jog_joints(self,q_i, sign):
+        # @burakaksoy RR-Client-WebBrowser-Robot.py:380
+        self.core.loop.create_task(self.async_jog_joints(q_i, sign))
+
+    async def async_jog_joints(self, q_i, sign):
+        try:
+            # @burakaksoy RR-Client-WebBrowser-Robot.py:391
+            jog = await self.get_jog()
+            while (self.mousedown): 
+                # Call Jog Joint Space Service funtion to handle this jogging
+                # await plugin_jogJointSpace.async_jog_joints2(q_i, sign, None)
+                await jog.async_jog_joints3(q_i, sign, None)
+
+            #await plugin_jogJointSpace.async_stop_joints(None)
+        except:
+            traceback.print_exc()
+        
     def jog_decrement_mousedown(self, joint_index):
-        print(f"jog_decrement_mousedown: {joint_index}")
+        self.jog_joints(joint_index+1,-1)
 
     def jog_increment_mousedown(self, joint_index):
-        print(f"jog_increment_mousedown: {joint_index}")
+        self.jog_joints(joint_index+1,+1)
 
     async def do_set_jog_mode(self):
         try:
