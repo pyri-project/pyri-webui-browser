@@ -145,18 +145,32 @@ class PyriJogPanel(PyriWebUIBrowserPanelBase):
         return mode
 
     async def get_jog(self):
+        
         #TODO: Fix connect_device("joint_jog")
         if not self.jog_connected:
             self.device_manager.connect_device("joint_jog")
+            self.device_manager.connect_device("cartesian_jog")
             self.jog_connected = True
+            
         current_robot = self.vue["$data"].current_robot
         if current_robot is None:
-            return "Invalid"
-        res, jog_service = self.device_manager.get_device_subscription("joint_jog").TryGetDefaultClient()
-        if not res:
-            return None
+            return None, None
+        try:
+            jog_service = await self.device_manager.get_device_subscription("joint_jog").AsyncGetDefaultClient(None,timeout=1)
+        except:
+            return None, None
+        joint_jog =  await jog_service.async_get_jog(current_robot,None)
 
-        return await jog_service.async_get_jog(current_robot,None)
+        cart_jog = None
+        try:
+            cart_jog_service = await self.device_manager.get_device_subscription("cartesian_jog").AsyncGetDefaultClient(None,timeout=1)
+            cart_jog =  await cart_jog_service.async_get_jog(current_robot,None)
+            
+        except:
+            traceback.print_exc()
+
+        print(f"joint_jog: {joint_jog}, cart_jog: {cart_jog}")
+        return joint_jog, cart_jog
 
     def jog_joints(self,q_i, sign):
         # @burakaksoy RR-Client-WebBrowser-Robot.py:380
@@ -165,7 +179,7 @@ class PyriJogPanel(PyriWebUIBrowserPanelBase):
     async def async_jog_joints(self, q_i, sign):
         try:
             # @burakaksoy RR-Client-WebBrowser-Robot.py:391
-            jog = await self.get_jog()
+            jog, _ = await self.get_jog()
             while (self.mousedown): 
                 # Call Jog Joint Space Service funtion to handle this jogging
                 # await plugin_jogJointSpace.async_jog_joints2(q_i, sign, None)
@@ -183,10 +197,11 @@ class PyriJogPanel(PyriWebUIBrowserPanelBase):
 
     async def do_set_jog_mode(self):
         try:
-            jog = await self.get_jog()
+            jog, cart_jog = await self.get_jog()
             if jog is None:
                 return
             await jog.async_setf_jog_mode(None)
+            await cart_jog.async_prepare_jog(None)
         except:
             traceback.print_exc()
 
@@ -198,7 +213,7 @@ class PyriJogPanel(PyriWebUIBrowserPanelBase):
     
     async def do_set_halt_mode(self):
         try:
-            jog = await self.get_jog()
+            jog, cart_jog = await self.get_jog()
             if jog is None:
                 return
             await jog.async_setf_halt_mode(None)
@@ -213,6 +228,14 @@ class PyriJogPanel(PyriWebUIBrowserPanelBase):
 
     def mouseleave_evt(self,evt):
         self.mousedown = False
+
+    def jog_cart_decrement_mousedown(self, joint_index):
+        #self.jog_joints(joint_index+1,-1)
+        print(f"jog_cart_decrement_mousedown: {joint_index}")
+
+    def jog_cart_increment_mousedown(self, joint_index):
+        #self.jog_joints(joint_index+1,+1)
+        print(f"jog_cart_increment_mousedown: {joint_index}")
 
 
 async def add_jog_panel(panel_type: str, core: PyriWebUIBrowser, parent_element: Any):
@@ -259,7 +282,10 @@ async def add_jog_panel(panel_type: str, core: PyriWebUIBrowser, parent_element:
             "set_halt_mode": jog_panel_obj.set_halt_mode,
             "mousedown": jog_panel_obj.mousedown_evt,
             "mouseup": jog_panel_obj.mouseup_evt,
-            "mouseleave": jog_panel_obj.mouseleave_evt
+            "mouseleave": jog_panel_obj.mouseleave_evt,
+            "jog_cart_decrement_mousedown": jog_panel_obj.jog_cart_decrement_mousedown,
+            "jog_cart_increment_mousedown": jog_panel_obj.jog_cart_increment_mousedown,
+
         },
         "computed": 
         {

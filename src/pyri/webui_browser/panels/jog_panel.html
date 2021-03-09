@@ -9,8 +9,8 @@
               Mode: {{ current_robot_mode }} <b-button @click="set_jog_mode">Enable Jog</b-button> <b-button @click="set_halt_mode">Halt</b-button>
             </span>
 </div>
-
-    <b-card title="Joint Jog" style="max-width: 30rem; display:inline-block;">
+<div>
+    <b-card title="Joint Jog" style="max-width: 30rem; display:inline-block; vertical-align: top;">
         <b-container class="bv-example-row">
             <b-row class="no-gutters">
               <b-col>Min<br>(deg)</b-col><b-col></b-col><b-col>Current<br>(deg)</b-col><b-col></b-col><b-col>Max<br>deg</b-col>
@@ -27,7 +27,7 @@
           </b-container>
     </b-card>
 
-    <b-card title="Task Space Jog" style="max-width: 20rem; display:inline-block;">
+    <b-card title="Task Space Jog" style="max-width: 20rem; display:inline-block; vertical-align: top;">
       <table id="table_TaskSpaceControl" border="0" >
         <Tr>
             <TH align="center" COLSPAN="2"> <H4>Position</H4> </TH>
@@ -72,5 +72,6 @@
         </tr>  
     </table>
     </b-card>
+    </div>
 
 </div>
