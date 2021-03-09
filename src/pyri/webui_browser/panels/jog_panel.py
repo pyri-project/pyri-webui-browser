@@ -255,42 +255,68 @@ class PyriJogPanel(PyriWebUIBrowserPanelBase):
     def mouseleave_evt(self,evt):
         self.mousedown = False
 
-    def jog_cart_decrement_mousedown(self, joint_index):
+    def jog_cart_decrement_mousedown(self, index):
         #self.jog_joints(joint_index+1,-1)
-        print(f"jog_cart_decrement_mousedown: {joint_index}")
+        if index == 0:
+            self.jog_cartesian(np.array(([-1.,0.,0.])), np.array(([0.,0.,0.])))
+            return
+        if index == 1:
+            self.jog_cartesian(np.array(([0.,-1.,0.])), np.array(([0.,0.,0.])))
+            return
+        if index == 2:
+            self.jog_cartesian(np.array(([0.,0.,-1.])), np.array(([0.,0.,0.])))
+            return
+        if index == 3:
+            self.jog_cartesian(np.array(([0.,0.,0.])), np.array(([-1.,0.,0.])))
+            return
+        if index == 4:
+            self.jog_cartesian(np.array(([0.,0.,0.])), np.array(([0.,-1.,0.])))
+            return
+        if index == 5:
+            self.jog_cartesian(np.array(([0.,0.,0.])), np.array(([0.,0.,-1.])))
+            return
 
-    def jog_cart_increment_mousedown(self, joint_index):
+    def jog_cart_increment_mousedown(self, index):
         #self.jog_joints(joint_index+1,+1)
-        print(f"jog_cart_increment_mousedown: {joint_index}")
+        if index == 0:
+            self.jog_cartesian(np.array(([+1.,0.,0.])), np.array(([0.,0.,0.])))
+            return
+        if index == 1:
+            self.jog_cartesian(np.array(([0.,+1.,0.])), np.array(([0.,0.,0.])))
+            return
+        if index == 2:
+            self.jog_cartesian(np.array(([0.,0.,+1.])), np.array(([0.,0.,0.])))
+            return
+        if index == 3:
+            self.jog_cartesian(np.array(([0.,0.,0.])), np.array(([+1.,0.,0.])))
+            return
+        if index == 4:
+            self.jog_cartesian(np.array(([0.,0.,0.])), np.array(([0.,+1.,0.])))
+            return
+        if index == 5:
+            self.jog_cartesian(np.array(([0.,0.,0.])), np.array(([0.,0.,+1.])))
+            return
 
-    def jog_cartesian(P_axis, R_axis):
+    def jog_cartesian(self,P_axis, R_axis):
         # @burakaksoy RR-Client-WebBrowser-Robot.py:508
-        global is_mousedown
-        is_mousedown = True
+        self.core.loop.create_task(self.async_jog_cartesian(P_axis, R_axis))
 
-        global is_jogging
-        if (not is_jogging): 
-            is_jogging = True
-            loop.create_task(async_jog_cartesian(P_axis, R_axis))
-        else:
-            print_div("Jogging has not finished yet..<br>")
-
-    async def async_jog_cartesian(P_axis, R_axis):
+    async def async_jog_cartesian(self, P_axis, R_axis):
         # @burakaksoy RR-Client-WebBrowser-Robot.py:520
-        global plugin_jogCartesianSpace
-        await plugin_jogCartesianSpace.async_prepare_jog(None)
-        # await plugin_jogCartesianSpace.async_jog_cartesian(P_axis, R_axis, None)
+        try:
+            jog, cart_jog = await self.get_jog()
+            await cart_jog.async_prepare_jog(None)
+                            
+            while (self.mousedown):
+                print("async_jog_cartesian")
+                # Call Jog Cartesian Space Service funtion to handle this jogging
+                # await plugin_jogCartesianSpace.async_jog_cartesian(P_axis, R_axis, None)
+                await cart_jog.async_jog_cartesian(P_axis, R_axis, None)
+
+            #await plugin_jogCartesianSpace.async_stop_joints(None)
+        except:
+            traceback.print_exc()
         
-        global is_mousedown
-        while (is_mousedown):
-            # Call Jog Cartesian Space Service funtion to handle this jogging
-            # await plugin_jogCartesianSpace.async_jog_cartesian(P_axis, R_axis, None)
-            await plugin_jogCartesianSpace.async_jog_cartesian2(P_axis, R_axis, None)
-
-        await plugin_jogCartesianSpace.async_stop_joints(None)
-        global is_jogging
-        is_jogging = False
-
     def cur_ZYX_angles(self, vue, *args):
         current_robot = vue["$data"].current_robot
         if current_robot is None:
@@ -305,9 +331,11 @@ class PyriJogPanel(PyriWebUIBrowserPanelBase):
                         
                         current_rpy = np.array2string(np.rad2deg(R2rpy(q2R(np.array([e.state_data.kin_chain_tcp[0][0][x] for x in range(4)],dtype=np.float64)))),formatter={'float_kind':lambda x: "%.2f" % x})
         except AttributeError:
-            traceback.print_exc()
+            #traceback.print_exc()
+            pass
         except KeyError:
-            traceback.print_exc()
+            #traceback.print_exc()
+            pass
 
         return current_rpy
 
@@ -325,9 +353,11 @@ class PyriJogPanel(PyriWebUIBrowserPanelBase):
                     if e.type == "com.robotraconteur.robotics.robot.RobotState":
                         current_position = np.array2string(np.array([e.state_data.kin_chain_tcp[0][1][x] for x in range(3)],dtype=np.float64), formatter={'float_kind':lambda x: "%.2f" % x})
         except AttributeError:
-            traceback.print_exc()
+            #traceback.print_exc()
+            pass
         except KeyError:
-            traceback.print_exc()
+            #traceback.print_exc()
+            pass
 
         return current_position
 
