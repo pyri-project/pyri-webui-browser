@@ -8,9 +8,12 @@ import traceback
 import numpy as np
 
 class PyriJogPanel(PyriWebUIBrowserPanelBase):
-    def __init__(self):
+    def __init__(self, device_manager, core):
         self.vue = None
         self.mousedown = False
+        self.device_manager = device_manager
+        self.core = core
+        self.jog_connected = False
 
     def init_vue(self,vue):
         self.vue = vue
@@ -141,17 +144,49 @@ class PyriJogPanel(PyriWebUIBrowserPanelBase):
 
         return mode
 
+    async def get_jog(self):
+        #TODO: Fix connect_device("joint_jog")
+        if not self.jog_connected:
+            self.device_manager.connect_device("joint_jog")
+            self.jog_connected = True
+        current_robot = self.vue["$data"].current_robot
+        if current_robot is None:
+            return "Invalid"
+        res, jog_service = self.device_manager.get_device_subscription("joint_jog").TryGetDefaultClient()
+        if not res:
+            return None
+
+        return await jog_service.async_get_jog(current_robot,None)
+
     def jog_decrement_mousedown(self, joint_index):
         print(f"jog_decrement_mousedown: {joint_index}")
 
     def jog_increment_mousedown(self, joint_index):
         print(f"jog_increment_mousedown: {joint_index}")
 
+    async def do_set_jog_mode(self):
+        try:
+            jog = await self.get_jog()
+            if jog is None:
+                return
+            await jog.async_setf_jog_mode(None)
+        except:
+            traceback.print_exc()
+
     def set_jog_mode(self, evt):
-        js.alert("Enable jog")
+        self.core.create_task(self.do_set_jog_mode())
 
     def set_halt_mode(self, evt):
-        js.alert("Enable jog")
+        self.core.create_task(self.do_set_halt_mode())
+    
+    async def do_set_halt_mode(self):
+        try:
+            jog = await self.get_jog()
+            if jog is None:
+                return
+            await jog.async_setf_halt_mode(None)
+        except:
+            traceback.print_exc()
 
     def mousedown_evt(self,evt):
         self.mousedown = True
@@ -167,6 +202,7 @@ async def add_jog_panel(panel_type: str, core: PyriWebUIBrowser, parent_element:
 
     assert panel_type == "jog"
 
+    
     jog_panel_html = importlib_resources.read_text(__package__,"jog_panel.html")
 
     panel_config = {
@@ -189,7 +225,7 @@ async def add_jog_panel(panel_type: str, core: PyriWebUIBrowser, parent_element:
 
     core.layout.add_panel_menu_item("jog", "Jogging")
 
-    jog_panel_obj = PyriJogPanel()
+    jog_panel_obj = PyriJogPanel(core.device_manager,core)
 
     jog_panel = js.Vue.new({
         "el": "#jog_panel_component",

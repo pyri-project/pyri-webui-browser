@@ -59,6 +59,38 @@ class PyriDevicesPanel(PyriWebUIBrowserPanelBase):
                 state_flags.extend(f)
 
         return " ".join(state_flags)
+
+    def device_name(self, local_name):
+        try:
+            return self.vue["$store"].state.devices_states.devices_states[local_name].device.name
+        except KeyError:
+            return ""
+        except AttributeError:
+            return ""
+
+    def device_connected(self, local_name):
+        try:
+            return self.vue["$store"].state.devices_states.devices_states[local_name].connected
+        except KeyError:
+            return ""
+        except AttributeError:
+            return ""
+
+    def device_ready(self, local_name):
+        try:
+            return self.vue["$store"].state.devices_states.devices_states[local_name].ready
+        except KeyError:
+            return ""
+        except AttributeError:
+            return ""
+
+    def device_error(self, local_name):
+        try:
+            return self.vue["$store"].state.devices_states.devices_states[local_name].error
+        except KeyError:
+            return ""
+        except AttributeError:
+            return ""
         
 
 async def add_devices_panel(panel_type: str, core: PyriWebUIBrowser, parent_element: Any):
@@ -97,7 +129,11 @@ async def add_devices_panel(panel_type: str, core: PyriWebUIBrowser, parent_elem
             "device_info": devices_panel_obj.device_info,
             "device_remove": devices_panel_obj.device_remove,
             "implemented_types": devices_panel_obj.implemented_types,
-            "device_state_flags": devices_panel_obj.device_state_flags
+            "device_state_flags": devices_panel_obj.device_state_flags,
+            "device_name": devices_panel_obj.device_name,
+            "device_connected": devices_panel_obj.device_connected,
+            "device_error": devices_panel_obj.device_error,
+            "device_ready": devices_panel_obj.device_ready,
         }
     })
 

@@ -13,17 +13,18 @@
             </tr>
         </thead>
         <tbody>
+            
             <template v-for="local_name in $store.state.active_device_names">
                 <tr>
                     <td>{{ local_name }}</td>
-                    <td>{{ $store.state.devices_states.devices_states[local_name].device.name }}</td>
+                    <td>{{ device_name(local_name) }}</td>
                     <td>
                         {{ implemented_types(local_name) }}
                     </td>
                     <td>
-                    <span v-if="!$store.state.devices_states.devices_states[local_name].connected" style="color:red">Disconnected</span>
-                    <span v-else-if="$store.state.devices_states.devices_states[local_name].error" style="color:red">Error</span>
-                    <span v-else-if="$store.state.devices_states.devices_states[local_name].ready" style="color:green">Ready</span>
+                    <span v-if="!device_connected(local_name)" style="color:red">Disconnected</span>
+                    <span v-else-if="device_error(local_name)" style="color:red">Error</span>
+                    <span v-else-if="device_ready(local_name)" style="color:green">Ready</span>
                     <span v-else style="color:yellow">Connected</span>
                     </td>
                     <td>
