@@ -227,7 +227,7 @@ class PyriJogPanel(PyriWebUIBrowserPanelBase):
             if jog is None:
                 return
             await jog.async_setf_jog_mode(None)
-            await cart_jog.async_prepare_jog(None)
+            #await cart_jog.async_prepare_jog(None)
         except:
             traceback.print_exc()
 
@@ -262,6 +262,34 @@ class PyriJogPanel(PyriWebUIBrowserPanelBase):
     def jog_cart_increment_mousedown(self, joint_index):
         #self.jog_joints(joint_index+1,+1)
         print(f"jog_cart_increment_mousedown: {joint_index}")
+
+    def jog_cartesian(P_axis, R_axis):
+        # @burakaksoy RR-Client-WebBrowser-Robot.py:508
+        global is_mousedown
+        is_mousedown = True
+
+        global is_jogging
+        if (not is_jogging): 
+            is_jogging = True
+            loop.create_task(async_jog_cartesian(P_axis, R_axis))
+        else:
+            print_div("Jogging has not finished yet..<br>")
+
+    async def async_jog_cartesian(P_axis, R_axis):
+        # @burakaksoy RR-Client-WebBrowser-Robot.py:520
+        global plugin_jogCartesianSpace
+        await plugin_jogCartesianSpace.async_prepare_jog(None)
+        # await plugin_jogCartesianSpace.async_jog_cartesian(P_axis, R_axis, None)
+        
+        global is_mousedown
+        while (is_mousedown):
+            # Call Jog Cartesian Space Service funtion to handle this jogging
+            # await plugin_jogCartesianSpace.async_jog_cartesian(P_axis, R_axis, None)
+            await plugin_jogCartesianSpace.async_jog_cartesian2(P_axis, R_axis, None)
+
+        await plugin_jogCartesianSpace.async_stop_joints(None)
+        global is_jogging
+        is_jogging = False
 
     def cur_ZYX_angles(self, vue, *args):
         current_robot = vue["$data"].current_robot
