@@ -195,7 +195,6 @@ class PyriJogPanel(PyriWebUIBrowserPanelBase):
         except:
             traceback.print_exc()
 
-        print(f"joint_jog: {joint_jog}, cart_jog: {cart_jog}")
         return joint_jog, cart_jog
 
     def jog_joints(self,q_i, sign):
@@ -308,7 +307,6 @@ class PyriJogPanel(PyriWebUIBrowserPanelBase):
             await cart_jog.async_prepare_jog(None)
                             
             while (self.mousedown):
-                print("async_jog_cartesian")
                 # Call Jog Cartesian Space Service funtion to handle this jogging
                 # await plugin_jogCartesianSpace.async_jog_cartesian(P_axis, R_axis, None)
                 await cart_jog.async_jog_cartesian(P_axis, R_axis, None)
