@@ -61,7 +61,7 @@ async def add_welcome_panel(panel_type: str, core: PyriWebUIBrowser, parent_elem
 
     welcome_panel_obj = PyriWelcomePanel()
 
-    welcome_counter = js.Vue.new({
+    welcome_counter = js.Vue.new(js.python_to_js({
         "el": "#welcome_counter",
         "store": core.vuex_store,
         "data": {
@@ -78,7 +78,7 @@ async def add_welcome_panel(panel_type: str, core: PyriWebUIBrowser, parent_elem
             "seqno": welcome_panel_obj.seqno
         }
         
-    })
+    }))
 
     welcome_panel_obj.init_vue(welcome_counter)
    

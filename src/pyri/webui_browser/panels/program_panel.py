@@ -96,42 +96,45 @@ class PyriProcedureListPanel(PyriWebUIBrowserPanelBase):
             self.core.create_task(self.do_procedure_delete(name))
 
     async def do_refresh_procedure_table(self):
+        try:
         
-        db = self.device_manager.get_device_subscription("variable_storage").GetDefaultClient()
+            db = self.device_manager.get_device_subscription("variable_storage").GetDefaultClient()
 
-        res = await db.async_filter_variables("procedure", "", ["blockly","pyri"], None)
+            res = await db.async_filter_variables("procedure", "", ["blockly","pyri"], None)
 
-        procedures = []
-        for r in res:
-            try:
-                tags = await db.async_getf_variable_tags("procedure", r, None)
-                doc = await db.async_getf_variable_doc("procedure", r, None)
-                procedure_info = {
-                        "procedure_name": r,
-                        "docstring": doc,
-                        "modified": ""
-                    }
+            procedures = []
+            for r in res:
+                try:
+                    tags = await db.async_getf_variable_tags("procedure", r, None)
+                    doc = await db.async_getf_variable_doc("procedure", r, None)
+                    procedure_info = {
+                            "procedure_name": r,
+                            "docstring": doc,
+                            "modified": ""
+                        }
 
-                if "blockly" in tags:
-                    procedure_info["procedure_type"] = "Blockly"
-                elif "pyri" in tags:
-                    procedure_info["procedure_type"] = "PyRI"
-                procedures.append(
-                    procedure_info
-                )  
-            except:
-                traceback.print_exc()
-                procedures.append(
-                    {
-                        "procedure_name": r,
-                        "procedure_type": "Unknown",
-                        "docstring": "",
-                        "modified": "Unknown"
-                    }
-                )        
+                    if "blockly" in tags:
+                        procedure_info["procedure_type"] = "Blockly"
+                    elif "pyri" in tags:
+                        procedure_info["procedure_type"] = "PyRI"
+                    procedures.append(
+                        procedure_info
+                    )  
+                except:
+                    traceback.print_exc()
+                    procedures.append(
+                        {
+                            "procedure_name": r,
+                            "procedure_type": "Unknown",
+                            "docstring": "",
+                            "modified": "Unknown"
+                        }
+                    )        
 
-        if self.vue is not None:
-            self.vue["$data"].procedures = procedures
+            if self.vue is not None:
+                self.vue["$data"].procedures = js.python_to_js(procedures)
+        except:
+            traceback.print_exc()
 
 
     def refresh_procedure_table(self, *args):
@@ -199,12 +202,11 @@ async def add_program_panel(panel_type: str, core: PyriWebUIBrowser, parent_elem
 
     core.layout.register_component("procedure_list",register_procedure_list_panel)
 
-    print(dir(core.layout.layout.root.getItemsById("program")))
-    core.layout.layout.root.getItemsById("program")[0].addChild(procedure_list_panel_config)
+    core.layout.layout.root.getItemsById("program")[0].addChild(js.python_to_js(procedure_list_panel_config))
 
     procedure_list_panel_obj = PyriProcedureListPanel(core, core.device_manager)
 
-    program_panel = js.Vue.new({
+    program_panel = js.Vue.new(js.python_to_js({
         "el": "#procedures_table",
         "store": core.vuex_store,
         "data":
@@ -221,7 +223,7 @@ async def add_program_panel(panel_type: str, core: PyriWebUIBrowser, parent_elem
             "refresh_procedure_table": procedure_list_panel_obj.refresh_procedure_table,
             "new_blockly_procedure": procedure_list_panel_obj.new_blockly_procedure
         }
-    })
+    }))
 
     procedure_list_panel_obj.init_vue(program_panel)
 
@@ -253,10 +255,10 @@ class PyriBlocklyProgramPanel(PyriWebUIBrowserPanelBase):
             "isClosable": True
         }
        
-        core.layout.layout.root.getItemsById("program")[0].addChild(blockly_panel_config)
+        core.layout.layout.root.getItemsById("program")[0].addChild(js.python_to_js(blockly_panel_config))
         res = core.layout.layout.root.getItemsById(f"procedure_blockly_{procedure_name}")[0].element.find("#procedure_blockly_component")[0]
                 
-        procedure_panel = js.Vue.new({
+        procedure_panel = js.Vue.new(js.python_to_js({
             "el": res,
             "store": core.vuex_store,
             "data":
@@ -269,7 +271,7 @@ class PyriBlocklyProgramPanel(PyriWebUIBrowserPanelBase):
                 "run": self.do_run,
                 "iframe_load": self.iframe_loaded
             }
-        })
+        }))
 
         self.vue = procedure_panel    
 

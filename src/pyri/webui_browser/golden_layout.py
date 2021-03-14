@@ -48,7 +48,7 @@ class PyriGoldenLayout:
     def init_golden_layout(self):
         
         layoutContainer = js.jQuery.find("#layoutContainer")
-        self._layout =js.GoldenLayout.new(_golden_layout_config, layoutContainer)
+        self._layout =js.GoldenLayout.new(js.python_to_js(_golden_layout_config), layoutContainer)
 
 
         self._layout.init()
@@ -67,7 +67,7 @@ class PyriGoldenLayout:
         js.golden_layout_register_component(self._layout,name,constructor_function,py_this)
 
     def add_panel(self,panel_config):
-        self._layout.root.contentItems[0].addChild(panel_config)
+        self._layout.root.contentItems[0].addChild(js.python_to_js(panel_config))
 
     def add_panel_menu_item(self,panel_id, text_label):
         menu_item = js.golden_layout_append_menu_item(text_label)

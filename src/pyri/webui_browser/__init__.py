@@ -39,7 +39,7 @@ class PyriWebUIBrowser:
         def set_device_infos(state, device_infos):
             state.device_infos = device_infos
 
-        self._store = js.window.vuex_store_new({
+        self._store = js.window.vuex_store_new(js.python_to_js({
             "state": {
                 "devices_states": {},
                 "active_device_names": [],
@@ -51,7 +51,7 @@ class PyriWebUIBrowser:
                 "set_active_device_names": set_active_device_names,
                 "set_device_infos": set_device_infos
             }
-        })
+        }))
 
     @property
     def loop(self):
@@ -123,16 +123,16 @@ class PyriWebUIBrowser:
     async def update(self):
         self._seqno += 1
 
-        if self._seqno == 600:
+        if self._seqno % 150 == 0:
             self.create_task(self.update_devices())
 
         res, devices_states, _ = self._devices_states_wire_sub.TryGetInValue()
 
         if res:
-            self._store.commit("set_devices_states", robotraconteur_data_to_plain(devices_states))
+            self._store.commit("set_devices_states", js.python_to_js(robotraconteur_data_to_plain(devices_states)))
 
             active_device_names = list(devices_states.devices_states.keys())
-            self._store.commit("set_active_device_names", active_device_names)
+            self._store.commit("set_active_device_names", js.python_to_js(active_device_names))
             self._devices_states_value = devices_states
             
             self._update_device_infos(devices_states)
@@ -195,7 +195,7 @@ class PyriWebUIBrowser:
                         except:
                             traceback.print_exc()
 
-            self.vuex_store.commit("set_device_infos", robotraconteur_data_to_plain(self._device_infos))
+            self.vuex_store.commit("set_device_infos", js.python_to_js(robotraconteur_data_to_plain(self._device_infos)))
 
         finally:
             self._device_infos_update_running = False

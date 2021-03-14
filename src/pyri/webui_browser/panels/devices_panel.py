@@ -121,7 +121,7 @@ async def add_devices_panel(panel_type: str, core: PyriWebUIBrowser, parent_elem
 
     devices_panel_obj = PyriDevicesPanel()
 
-    devices_panel = js.Vue.new({
+    devices_panel = js.Vue.new(js.python_to_js({
         "el": "#active_devices_table",
         "store": core.vuex_store,
         "methods":
@@ -135,7 +135,7 @@ async def add_devices_panel(panel_type: str, core: PyriWebUIBrowser, parent_elem
             "device_error": devices_panel_obj.device_error,
             "device_ready": devices_panel_obj.device_ready,
         }
-    })
+    }))
 
     devices_panel_obj.init_vue(devices_panel)
 

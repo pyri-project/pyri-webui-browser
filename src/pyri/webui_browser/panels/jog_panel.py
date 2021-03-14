@@ -69,7 +69,7 @@ class PyriJogPanel(PyriWebUIBrowserPanelBase):
                 traceback.print_exc()
                 continue
 
-        return robot_device_names
+        return js.python_to_js(robot_device_names)
 
     
     def watch_current_robot_options(self, new_value, *args):
@@ -132,7 +132,7 @@ class PyriJogPanel(PyriWebUIBrowserPanelBase):
                 v["current"] = "N/A"
             
             ret.append(v)        
-        return ret
+        return js.python_to_js(ret)
 
     def current_robot_mode(self, vue, *args):
         current_robot = vue["$data"].current_robot
@@ -310,7 +310,7 @@ class PyriJogPanel(PyriWebUIBrowserPanelBase):
             while (self.mousedown):
                 # Call Jog Cartesian Space Service funtion to handle this jogging
                 # await plugin_jogCartesianSpace.async_jog_cartesian(P_axis, R_axis, None)
-                await cart_jog.async_jog_cartesian(P_axis, R_axis, None)
+                await cart_jog.async_jog_cartesian3(P_axis, R_axis, None)
 
             #await plugin_jogCartesianSpace.async_stop_joints(None)
         except:
@@ -503,7 +503,7 @@ async def add_jog_panel(panel_type: str, core: PyriWebUIBrowser, parent_element:
 
     jog_panel_obj = PyriJogPanel(core.device_manager,core)
 
-    jog_panel = js.Vue.new({
+    jog_panel = js.Vue.new(js.python_to_js({
         "el": "#jog_panel_component",
         "store": core.vuex_store,
         "data":
@@ -542,7 +542,7 @@ async def add_jog_panel(panel_type: str, core: PyriWebUIBrowser, parent_element:
         {
             "current_robot_options": jog_panel_obj.watch_current_robot_options
         }
-    })
+    }))
 
     jog_panel_obj.init_vue(jog_panel)
 
