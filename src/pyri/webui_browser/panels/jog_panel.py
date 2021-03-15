@@ -215,24 +215,24 @@ class PyriJogPanel(PyriWebUIBrowserPanelBase):
 
     async def get_jog(self):
         
-        #TODO: Fix connect_device("joint_jog")
+        #TODO: Fix connect_device("jog_joint")
         if not self.jog_connected:
-            self.device_manager.connect_device("joint_jog")
-            self.device_manager.connect_device("cartesian_jog")
+            self.device_manager.connect_device("jog_joint")
+            self.device_manager.connect_device("jog_cartesian")
             self.jog_connected = True
             
         current_robot = self.vue["$data"].current_robot
         if current_robot is None:
             return None, None
         try:
-            jog_service = await self.device_manager.get_device_subscription("joint_jog").AsyncGetDefaultClient(None,timeout=1)
+            jog_service = await self.device_manager.get_device_subscription("jog_joint").AsyncGetDefaultClient(None,timeout=1)
         except:
             return None, None
         joint_jog =  await jog_service.async_get_jog(current_robot,None)
 
         cart_jog = None
         try:
-            cart_jog_service = await self.device_manager.get_device_subscription("cartesian_jog").AsyncGetDefaultClient(None,timeout=1)
+            cart_jog_service = await self.device_manager.get_device_subscription("jog_cartesian").AsyncGetDefaultClient(None,timeout=1)
             cart_jog =  await cart_jog_service.async_get_jog(current_robot,None)
             
         except:
@@ -435,7 +435,7 @@ class PyriJogPanel(PyriWebUIBrowserPanelBase):
         # TODO: Verify the length and boards of target_angles
         try:
             for i in range(len(target_angles)):
-                js.jQuery.find(f"#j{i}_angle_in")[0].value = np.rad2deg(target_angles[i])
+                js.jQuery.find(f"#j{i}_angle_in")[0].value = (target_angles[i])
         except:
             traceback.print_exc()
             js.alert("Invalid joint angle entries")
@@ -465,7 +465,7 @@ class PyriJogPanel(PyriWebUIBrowserPanelBase):
         try:
             var_storage = self.device_manager.get_device_subscription("variable_storage").GetDefaultClient()
             joint_pose_names = await var_storage.async_filter_variables("globals",".*",["joint_pose"],None)
-            self.vue["$data"].load_joint_pose_options = joint_pose_names
+            self.vue["$data"].load_joint_pose_options = js.python_to_js(joint_pose_names)
         except:
             traceback.print_exc()
             js.alert(f"Save joint pose failed:\n\n{traceback.format_exc()}")
@@ -495,7 +495,7 @@ class PyriJogPanel(PyriWebUIBrowserPanelBase):
         if e_state is not None:
             for e in e_state:
                 if e.type == "com.robotraconteur.robotics.robot.RobotState":
-                    joint_angles = [j for j in e.state_data.joint_position]
+                    joint_angles = np.rad2deg([j for j in e.state_data.joint_position])
         if joint_angles is None:
             js.alert("Could not determine robot pose")
             return
@@ -550,16 +550,16 @@ class PyriJogPanel(PyriWebUIBrowserPanelBase):
 
     async def get_tool(self):
         
-        #TODO: Fix connect_device("joint_jog")
+        #TODO: Fix connect_device("jog_joint")
         if not self.jog_connected:
-            self.device_manager.connect_device("joint_jog")            
+            self.device_manager.connect_device("jog_joint")            
             self.jog_connected = True
             
         current_tool = self.vue["$data"].current_tool
         if current_tool is None:
             return None
         try:
-            jog_service = await self.device_manager.get_device_subscription("joint_jog").AsyncGetDefaultClient(None,timeout=1)
+            jog_service = await self.device_manager.get_device_subscription("jog_joint").AsyncGetDefaultClient(None,timeout=1)
         except:
             return None, None
         return  await jog_service.async_get_tool(current_tool,None)        
