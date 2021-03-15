@@ -1,11 +1,11 @@
 <div id="jog_panel_component" @mousedown="mousedown" @mouseup="mouseup" @mouseleave="mouseleave">
 <div>
     Robot: <b-form-select v-model="current_robot" :options="current_robot_options" style="width: 250px"></b-form-select>
-    Status: <span v-if="!$store.state.devices_states.devices_states[current_robot].connected" style="color:red">Disconnected</span>
-            <span v-else-if="$store.state.devices_states.devices_states[current_robot].error" style="color:red">Error</span>
-            <span v-else-if="$store.state.devices_states.devices_states[current_robot].ready" style="color:green">Ready</span>
+    Status: <span v-if="!current_robot_connected" style="color:red">Disconnected</span>
+            <span v-else-if="current_robot_error" style="color:red">Error</span>
+            <span v-else-if="current_robot_ready" style="color:green">Ready</span>
             <span v-else style="color:yellow">Connected</span>
-            <span v-if="$store.state.devices_states.devices_states[current_robot].connected">
+            <span v-if="current_robot_connected">
               Mode: {{ current_robot_mode }} <b-button @click="set_jog_mode">Enable Jog</b-button> <b-button @click="set_halt_mode">Halt</b-button>
             </span>
 </div>
@@ -80,6 +80,18 @@
         </tr>  
     </table>
     </b-card>
+
+    <b-card title="Tool" style="max-width: 30rem; display:inline-block; vertical-align: top;">
+        <div>Tool: <b-form-select v-model="current_tool" :options="current_tool_options" style="width: 250px"></b-form-select>
+            Status: <span v-if="!current_tool_connected" style="color:red">Disconnected</span>
+            <span v-else-if="current_tool_error" style="color:red">Error</span>
+            <span v-else-if="current_tool_ready" style="color:green">Ready</span>
+            <span v-else style="color:yellow">Connected</span>
+            <span v-if="current_tool_connected">
+        </div>
+        <b-button @click="tool_open()">Open Tool</b-button><b-button @click="tool_close()">Close Tool</b-button>
+    </b-card>
+
     </div>
 
 </div>

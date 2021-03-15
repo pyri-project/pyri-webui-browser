@@ -171,6 +171,48 @@ class PyriJogPanel(PyriWebUIBrowserPanelBase):
 
         return mode
 
+    def current_robot_connected(self, vue, *args):
+        try:
+            current_robot = vue["$data"].current_robot
+            return vue["$store"].state.devices_states.devices_states[current_robot].connected
+        except:
+            return False
+
+    def current_robot_error(self, vue, *args):
+        try:
+            current_robot = vue["$data"].current_robot
+            return vue["$store"].state.devices_states.devices_states[current_robot].error
+        except:
+            return True
+
+    def current_robot_ready(self, vue, *args):
+        try:
+            current_robot = vue["$data"].current_robot
+            return vue["$store"].state.devices_states.devices_states[current_robot].ready
+        except:
+            return False
+
+    def current_tool_connected(self, vue, *args):
+        try:
+            current_tool = vue["$data"].current_tool
+            return vue["$store"].state.devices_states.devices_states[current_tool].connected
+        except:
+            return False
+
+    def current_tool_error(self, vue, *args):
+        try:
+            current_tool = vue["$data"].current_tool
+            return vue["$store"].state.devices_states.devices_states[current_tool].error
+        except:
+            return True
+
+    def current_tool_ready(self, vue, *args):
+        try:
+            current_tool = vue["$data"].current_tool
+            return vue["$store"].state.devices_states.devices_states[current_tool].ready
+        except:
+            return False
+
     async def get_jog(self):
         
         #TODO: Fix connect_device("joint_jog")
@@ -472,6 +514,78 @@ class PyriJogPanel(PyriWebUIBrowserPanelBase):
     def delete_joint_pose(self,evt):
         self.core.create_task(self.do_delete_joint_pose())
 
+    def current_tool_options(self, vue, *args):
+                
+        tool_device_names = []
+
+        for local_name in vue["$store"].state.active_device_names:
+            
+            try:
+                device_infos = vue["$store"].state.device_infos[local_name]
+            except KeyError:
+                traceback.print_exc()
+                continue
+            try:                
+                root_object_type = device_infos.device_info.root_object_type
+                if root_object_type == "com.robotraconteur.robotics.tool.Tool":
+                    tool_device_names.append({"value": local_name, "text": local_name})
+                    continue
+                root_object_implements = device_infos.device_info.root_object_implements
+                if "com.robotraconteur.robotics.tool.Tool" in root_object_implements:
+                    tool_device_names.append({"value": local_name, "text": local_name})
+                    continue           
+            except AttributeError:
+                traceback.print_exc()
+                continue
+
+        return js.python_to_js(tool_device_names)
+
+    
+    def watch_current_tool_options(self, new_value, *args):
+        if new_value.length > 0:
+            if self.vue["$data"].current_tool is None:
+                self.vue["$data"].current_tool = new_value[0].value
+        else:
+            self.vue["$data"].current_tool = None
+
+    async def get_tool(self):
+        
+        #TODO: Fix connect_device("joint_jog")
+        if not self.jog_connected:
+            self.device_manager.connect_device("joint_jog")            
+            self.jog_connected = True
+            
+        current_tool = self.vue["$data"].current_tool
+        if current_tool is None:
+            return None
+        try:
+            jog_service = await self.device_manager.get_device_subscription("joint_jog").AsyncGetDefaultClient(None,timeout=1)
+        except:
+            return None, None
+        return  await jog_service.async_get_tool(current_tool,None)        
+
+    def tool_open(self):
+        self.core.loop.create_task(self.async_tool_open())
+
+    async def async_tool_open(self):
+        try:
+            
+            tool = await self.get_tool()
+            await tool.async_open(None)            
+        except:
+            traceback.print_exc()
+
+    def tool_close(self):
+        self.core.loop.create_task(self.async_tool_close())
+
+    async def async_tool_close(self):
+        try:
+            
+            tool = await self.get_tool()
+            await tool.async_close(None)            
+        except:
+            traceback.print_exc()
+
 
 
 async def add_jog_panel(panel_type: str, core: PyriWebUIBrowser, parent_element: Any):
@@ -509,6 +623,7 @@ async def add_jog_panel(panel_type: str, core: PyriWebUIBrowser, parent_element:
         "data":
         {
             "current_robot": None,
+            "current_tool": None,
             "load_joint_pose_selected": "",
             "load_joint_pose_options": []
         },
@@ -527,20 +642,31 @@ async def add_jog_panel(panel_type: str, core: PyriWebUIBrowser, parent_element:
             "load_joint_pose": jog_panel_obj.load_joint_pose,
             "refresh_joint_pose_options": jog_panel_obj.refresh_joint_pose_options,
             "save_joint_pose": jog_panel_obj.save_joint_pose,
-            "delete_joint_pose": jog_panel_obj.delete_joint_pose
+            "delete_joint_pose": jog_panel_obj.delete_joint_pose,
+            "tool_open": jog_panel_obj.tool_open,
+            "tool_close": jog_panel_obj.tool_close
 
         },
         "computed": 
         {
             "current_robot_options": jog_panel_obj.current_robot_options,
+            "current_robot_connected": jog_panel_obj.current_robot_connected,
+            "current_robot_error": jog_panel_obj.current_robot_error,
+            "current_robot_ready": jog_panel_obj.current_robot_ready,
             "joint_state": jog_panel_obj.joint_state,
             "current_robot_mode": jog_panel_obj.current_robot_mode,
             "cur_ZYX_angles": jog_panel_obj.cur_ZYX_angles,
-            "cur_position": jog_panel_obj.cur_position
+            "cur_position": jog_panel_obj.cur_position,
+            "current_tool_options": jog_panel_obj.current_tool_options,
+            "current_tool_connected": jog_panel_obj.current_tool_connected,
+            "current_tool_error": jog_panel_obj.current_tool_error,
+            "current_tool_ready": jog_panel_obj.current_tool_ready,
         },
         "watch":
         {
-            "current_robot_options": jog_panel_obj.watch_current_robot_options
+            "current_robot_options": jog_panel_obj.watch_current_robot_options,
+            "current_tool_options": jog_panel_obj.watch_current_tool_options
+
         }
     }))
 
