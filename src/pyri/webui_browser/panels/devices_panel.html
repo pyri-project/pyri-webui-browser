@@ -1,4 +1,5 @@
 <div id="active_devices_table">
+    <div><b-button @click="device_add">Add Device</b-button></div>
     <div class="bootstrap-table"></div>
     <caption>Active Devices</caption>
     <table data-toggle="table" data-search="true" data-show-columns="true" class="table table-hover table-bordered" data-card-view="true" data-show-toggle="true" data-search="true">
@@ -38,9 +39,34 @@
             </template>
         </tbody>
     </table>
-    </div>
+    <b-modal id="add-device-modal" title="Add Device" ok-only ok-title="Close" hide-header-close modal-class="modal-fullscreen">
+        <div><b-button @click="refresh_device_add">Refresh</b-button></div>
+        <!--<table id="devices_panel_detected_devices" data-show-cards="true">
+            <thead>
+                <tr>
+                    <th data-field="device">Device</th>
+                    <th data-field="parent_device">Parent Device</th>
+                    <th data-field="manufacturer">Manufacturer</th>
+                    <th data-field="model">Model</th>
+                    <th data-field="serial_number">Serial Number</th>
+                    <th data-field="user_description">User Description</th>
+                    <th data-field="service_name">Service Name</th>
+                    <th data-field="urls">URLs</th>
+                    <th data-field="root_object_type">Root Object Type</th>
+                    <th data-field="root_object_implements">Root Object Implements</th>
+                    <th data-field="action">Actions</th>
+                </tr>
+            </thead>
+        </table>-->
+        <bootstrap-table :columns="add_device_columns" :data="detected_devices" :options="add_device_options" ></bootstrap-table>
+    </b-modal>
+
+    <b-modal id="device-info-modal" title="Device Info" ok-only ok-title="Close" hide-header-close modal-class="modal-fullscreen">
+        <bootstrap-table :columns="selected_device_info_columns" :data="selected_device_info" :options="add_device_options" ></bootstrap-table>
+    </b-modal>
 </div>
 
+    
 <style>
     #active_devices_table {
         background-color: white !important;
