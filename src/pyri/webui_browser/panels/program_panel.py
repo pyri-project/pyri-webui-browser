@@ -87,7 +87,7 @@ class PyriProcedureListPanel(PyriWebUIBrowserPanelBase):
     async def do_procedure_delete(self,name):        
         try:
             var_storage = self.device_manager.get_device_subscription("variable_storage").GetDefaultClient()
-            var_storage.async_delete_variable("procedure", name, None)
+            await var_storage.async_delete_variable("procedure", name, None)
         except:
             pass
 
@@ -162,7 +162,102 @@ class PyriProcedureListPanel(PyriWebUIBrowserPanelBase):
     def new_blockly_procedure(self, *args):
         self.core.create_task(self.do_new_blockly_procedure())
 
+
+class PyriGlobalsListPanel(PyriWebUIBrowserPanelBase):
+
+    def __init__(self, core, device_manager):
+        self.vue = None
+        self.core = core
+        self.device_manager = device_manager
+
+    def init_vue(self,vue):
+        self.vue = vue    
+
+    def variable_open(self, name):
+        js.alert("Variable open")
+        #p = PyriBlocklyProgramPanel(name,self.core,self.device_manager)
+
+
+    async def do_variable_copy(self,name,copy_name):
+        try:
+
+            var_storage = self.device_manager.get_device_subscription("variable_storage").GetDefaultClient()
+            var_consts = RRN.GetConstants('tech.pyri.variable_storage', var_storage)
+            variable_persistence = var_consts["VariablePersistence"]
+            variable_protection_level = var_consts["VariableProtectionLevel"]
+            procedure = await var_storage.async_getf_variable_value("globals",name,None)
+            tags = await var_storage.async_getf_variable_tags("globals",name,None)
+            doc = await var_storage.async_getf_variable_doc("globals",name,None)
+            await var_storage.async_add_variable2("globals", copy_name ,"string", \
+                procedure, tags, {}, variable_persistence["normal"], None, variable_protection_level["read_write"], \
+                    [], doc, False, None)
+        except:
+            traceback.print_exc()
+
+    def variable_copy(self, name):
+        copy_name = js.prompt("Variable copy name")
+        self.core.create_task(self.do_variable_copy(name,copy_name))
+
+    def variable_info(self, name):
+        js.window.alert(f"Procedure info: {name}")
+
+    async def do_variable_delete(self,name):        
+        try:
+            var_storage = self.device_manager.get_device_subscription("variable_storage").GetDefaultClient()
+            await var_storage.async_delete_variable("globals", name, None)
+        except:
+            pass
+
+    def variable_delete(self, name):
+        if js.window.confirm(f"Delete global variable: {name}?"):
+            self.core.create_task(self.do_procedure_delete(name))
+
+    async def do_refresh_globals_table(self):
+        try:
         
+            db = self.device_manager.get_device_subscription("variable_storage").GetDefaultClient()
+
+            res = await db.async_filter_variables("globals", "", [], None)
+
+            vars = []
+            for r in res:
+                try:
+                    var_info = await db.async_getf_variable_info("globals", r, None)
+                    doc = await db.async_getf_variable_doc("globals", r, None)
+                    var_info2 = {
+                            "variable_name": r,
+                            "docstring": doc,
+                            "data_type": var_info.datatype,
+                            "tags": " ".join(var_info.tags),
+                            "modified": ""
+                        }
+
+                    vars.append(
+                        var_info2
+                    )  
+                except:
+                    traceback.print_exc()
+                    vars.append(
+                        {
+                            "variable_name": r,
+                            "docstring": "",
+                            "data_type": "Unknown",
+                            "tags": "",
+                            "modified": "Unknown"
+                        }
+                    )        
+
+            if self.vue is not None:
+                self.vue["$data"].variables = js.python_to_js(vars)
+        except:
+            traceback.print_exc()
+
+
+    def refresh_globals_table(self, *args):
+        self.core.create_task(self.do_refresh_globals_table())
+    
+    def new_variable(self, *args):
+        js.alert("Do new global variable")
 
 async def add_program_panel(panel_type: str, core: PyriWebUIBrowser, parent_element: Any):
 
@@ -234,8 +329,55 @@ async def add_program_panel(panel_type: str, core: PyriWebUIBrowser, parent_elem
 
     core.layout.register_component(f"procedure_blockly",register_blockly_panel)
 
+    add_globals_panel(core)
+
+    p = core.layout.layout.root.getItemsById("program")[0].getItemsById("procedure_list")
+    p[0].parent.setActiveContentItem(p[0])
+    
     return procedure_list_panel_obj
 
+def add_globals_panel(core):
+    globals_list_panel_html = importlib_resources.read_text(__package__,"globals_panel.html")
+
+    globals_list_panel_config = {
+        "type": "component",
+        "componentName": "globals_list",
+        "componentState": {},
+        "title": "Globals List",
+        "id": "globals_list",
+        "isClosable": False
+    }
+
+    gl = core.layout.layout
+
+    def register_globals_list_panel(container, state):
+        container.getElement().html(globals_list_panel_html)
+
+    core.layout.register_component("globals_list",register_globals_list_panel)
+
+    core.layout.layout.root.getItemsById("program")[0].addChild(js.python_to_js(globals_list_panel_config))
+
+    globals_list_panel_obj = PyriGlobalsListPanel(core, core.device_manager)
+
+    globals_panel = js.Vue.new(js.python_to_js({
+        "el": "#globals_table",
+        "store": core.vuex_store,
+        "data":
+        {
+            "variables": []
+        },
+        "methods":
+        {            
+            "variable_open": globals_list_panel_obj.variable_open,
+            "variable_copy": globals_list_panel_obj.variable_copy,
+            "variable_info": globals_list_panel_obj.variable_info,
+            "variable_delete": globals_list_panel_obj.variable_delete,
+            "refresh_globals_table": globals_list_panel_obj.refresh_globals_table,
+            "new_variable": globals_list_panel_obj.new_variable
+        }
+    }))
+
+    globals_list_panel_obj.init_vue(globals_panel)
 
 class PyriBlocklyProgramPanel(PyriWebUIBrowserPanelBase):
     def __init__(self, procedure_name: str, core: PyriWebUIBrowser, device_manager):

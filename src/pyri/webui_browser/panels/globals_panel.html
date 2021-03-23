@@ -1,0 +1,41 @@
+<div id="globals_table">
+    <b-button @click="refresh_globals_table">Refresh Table</b-button> <b-button @click="new_variable">New Variable</b-button>
+    <div class="bootstrap-table"></div>
+    <caption>Global Variables</caption>
+    <table data-toggle="table" data-search="true" data-show-columns="true" class="table table-hover table-bordered" data-card-view="true" data-show-toggle="true" data-search="true">
+        <thead>
+            <tr>
+                <th data-field="variable_name">Name</th>
+                <th data-field="docstring">Docstring</th>
+                <th data-field="data_type">Data Type</th>
+                <th data-field="tags">Tags</th>
+                <th data-field="modified">Modified</th>           
+                <th data-field="actions">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <template v-for="v in variables">
+                <tr>
+                    <td>{{ v.variable_name }}</td>                    
+                    <td>{{ v.docstring }}</td>
+                    <td>{{ v.data_type }}</td>
+                    <td>{{ v.tags }}</td>
+                    <td>{{ v.modified }}</td>
+                    <td>                        
+                        <a class="open" title="Open Variable" @click="variable_open(v.variable_name)"><i class="fas fa-2x fa-folder-open"></i></a>&nbsp;
+                        <a class="copy" title="Copy Variable" @click="variable_copy(v.variable_name)"><i class="fas fa-2x fa-copy"></i></a>&nbsp;
+                        <a class="info" title="Variable Info" @click="variable_info(p.variable_name)"><i class="fas fa-2x fa-info-circle"></i></a>&nbsp;
+                        <a class="remove" title="Delete Variable" @click="variable_delete(v.variable_name)"><i class="fas fa-2x fa-trash"></i></a>
+                    </td>
+                </tr>
+            </template>
+        </tbody>
+    </table>
+    </div>
+</div>
+
+<style>
+    #globals_table {
+        background-color: white !important;
+    }
+</style>
