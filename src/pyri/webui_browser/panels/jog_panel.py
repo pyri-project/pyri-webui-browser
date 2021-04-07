@@ -215,30 +215,21 @@ class PyriJogPanel(PyriWebUIBrowserPanelBase):
 
     async def get_jog(self):
         
-        #TODO: Fix connect_device("jog_joint")
+        #TODO: Fix connect_device("robotics_jog")
         if not self.jog_connected:
-            self.device_manager.connect_device("jog_joint")
-            self.device_manager.connect_device("jog_cartesian")
+            self.device_manager.connect_device("robotics_jog")            
             self.jog_connected = True
             
         current_robot = self.vue["$data"].current_robot
         if current_robot is None:
             return None, None
         try:
-            jog_service = await self.device_manager.get_device_subscription("jog_joint").AsyncGetDefaultClient(None,timeout=1)
-        except:
-            return None, None
-        joint_jog =  await jog_service.async_get_jog(current_robot,None)
-
-        cart_jog = None
-        try:
-            cart_jog_service = await self.device_manager.get_device_subscription("jog_cartesian").AsyncGetDefaultClient(None,timeout=1)
-            cart_jog =  await cart_jog_service.async_get_jog(current_robot,None)
-            
+            jog_service = await self.device_manager.get_device_subscription("robotics_jog").AsyncGetDefaultClient(None,timeout=1)
+            jog =  await jog_service.async_get_jog(current_robot,None)
+            return jog
         except:
             traceback.print_exc()
-
-        return joint_jog, cart_jog
+            return None
 
     def jog_joints(self,q_i, sign):
         # @burakaksoy RR-Client-WebBrowser-Robot.py:380
@@ -247,11 +238,11 @@ class PyriJogPanel(PyriWebUIBrowserPanelBase):
     async def async_jog_joints(self, q_i, sign):
         try:
             # @burakaksoy RR-Client-WebBrowser-Robot.py:391
-            jog, _ = await self.get_jog()
+            jog = await self.get_jog()
             while (self.mousedown): 
                 # Call Jog Joint Space Service funtion to handle this jogging
                 # await plugin_jogJointSpace.async_jog_joints2(q_i, sign, None)
-                await jog.async_jog_joints3(q_i, sign, None)
+                await jog.async_jog_joints(q_i, sign, None)
 
             #await plugin_jogJointSpace.async_stop_joints(None)
         except:
@@ -265,11 +256,10 @@ class PyriJogPanel(PyriWebUIBrowserPanelBase):
 
     async def do_set_jog_mode(self):
         try:
-            jog, cart_jog = await self.get_jog()
+            jog = await self.get_jog()
             if jog is None:
                 return
             await jog.async_setf_jog_mode(None)
-            #await cart_jog.async_prepare_jog(None)
         except:
             traceback.print_exc()
 
@@ -281,7 +271,7 @@ class PyriJogPanel(PyriWebUIBrowserPanelBase):
     
     async def do_set_halt_mode(self):
         try:
-            jog, cart_jog = await self.get_jog()
+            jog = await self.get_jog()
             if jog is None:
                 return
             await jog.async_setf_halt_mode(None)
@@ -346,13 +336,13 @@ class PyriJogPanel(PyriWebUIBrowserPanelBase):
     async def async_jog_cartesian(self, P_axis, R_axis):
         # @burakaksoy RR-Client-WebBrowser-Robot.py:520
         try:
-            jog, cart_jog = await self.get_jog()
-            await cart_jog.async_prepare_jog(None)
+            jog = await self.get_jog()
+            await jog.async_prepare_jog(None)
                             
             while (self.mousedown):
                 # Call Jog Cartesian Space Service funtion to handle this jogging
                 # await plugin_jogCartesianSpace.async_jog_cartesian(P_axis, R_axis, None)
-                await cart_jog.async_jog_cartesian3(P_axis, R_axis, None)
+                await jog.async_jog_cartesian3(P_axis, R_axis, None)
 
             #await plugin_jogCartesianSpace.async_stop_joints(None)
         except:
@@ -552,16 +542,16 @@ class PyriJogPanel(PyriWebUIBrowserPanelBase):
         
         #TODO: Fix connect_device("jog_joint")
         if not self.jog_connected:
-            self.device_manager.connect_device("jog_joint")            
+            self.device_manager.connect_device("robotics_jog")            
             self.jog_connected = True
             
         current_tool = self.vue["$data"].current_tool
         if current_tool is None:
             return None
         try:
-            jog_service = await self.device_manager.get_device_subscription("jog_joint").AsyncGetDefaultClient(None,timeout=1)
+            jog_service = await self.device_manager.get_device_subscription("robotics_jog").AsyncGetDefaultClient(None,timeout=1)
         except:
-            return None, None
+            return None
         return  await jog_service.async_get_tool(current_tool,None)        
 
     def tool_open(self):
