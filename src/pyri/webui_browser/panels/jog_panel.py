@@ -644,6 +644,10 @@ class PyriJogPanel(PyriWebUIBrowserPanelBase):
     def selected_task_joystick_enable_changed(self,e):
         self.core.loop.create_task(self.async_selected_task_joystick_enable_changed(e))
 
+    def current_robot_changed(self,e):
+        self.vue["$data"].selected_joystick_enable = "disable"
+        self.vue["$data"].selected_task_joystick_enable = "disable"        
+
 
 
 async def add_jog_panel(panel_type: str, core: PyriWebUIBrowser, parent_element: Any):
@@ -692,6 +696,7 @@ async def add_jog_panel(panel_type: str, core: PyriWebUIBrowser, parent_element:
         },
         "methods":
         {
+            "current_robot_changed": jog_panel_obj.current_robot_changed,
             "jog_decrement_mousedown": jog_panel_obj.jog_decrement_mousedown,
             "jog_increment_mousedown": jog_panel_obj.jog_increment_mousedown,
             "set_jog_mode": jog_panel_obj.set_jog_mode,
