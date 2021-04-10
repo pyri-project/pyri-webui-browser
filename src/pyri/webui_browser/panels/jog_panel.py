@@ -287,6 +287,10 @@ class PyriJogPanel(PyriWebUIBrowserPanelBase):
 
     def mouseleave_evt(self,evt):
         self.mousedown = False
+        try:
+            self.vue["$data"].selected_joystick_enable = "disable"
+        except:
+            pass
 
     def jog_cart_decrement_mousedown(self, index):
         #self.jog_joints(joint_index+1,-1)
@@ -578,6 +582,35 @@ class PyriJogPanel(PyriWebUIBrowserPanelBase):
         except:
             traceback.print_exc()
 
+    async def async_selected_joystick_enable_changed(self,e):
+        try:
+
+            if e == "disable":
+                jog = await self.get_jog()
+                await jog.async_disable_jog_joints_joystick(None)
+                return
+            if e == "group1":
+                group = 0,
+            elif e == "group2":
+                group = 1
+            else:
+                assert False, "Invalid joint jog group"
+                
+            jog = await self.get_jog()
+            while self.vue["$data"].selected_joystick_enable == e: 
+                # Call Jog Joint Space Service funtion to handle this jogging
+                # await plugin_jogJointSpace.async_jog_joints2(q_i, sign, None)
+                speed_perc = float(self.vue["$data"].selected_joint_speed)
+                
+                await jog.async_enable_jog_joints_joystick(group, speed_perc, None)
+
+            #await plugin_jogJointSpace.async_stop_joints(None)
+        except:
+            traceback.print_exc()
+
+    def selected_joystick_enable_changed(self,e):
+        self.core.loop.create_task(self.async_selected_joystick_enable_changed(e))
+
 
 
 async def add_jog_panel(panel_type: str, core: PyriWebUIBrowser, parent_element: Any):
@@ -638,7 +671,8 @@ async def add_jog_panel(panel_type: str, core: PyriWebUIBrowser, parent_element:
             "save_joint_pose": jog_panel_obj.save_joint_pose,
             "delete_joint_pose": jog_panel_obj.delete_joint_pose,
             "tool_open": jog_panel_obj.tool_open,
-            "tool_close": jog_panel_obj.tool_close
+            "tool_close": jog_panel_obj.tool_close,
+            "selected_joystick_enable_changed": jog_panel_obj.selected_joystick_enable_changed
 
         },
         "computed": 

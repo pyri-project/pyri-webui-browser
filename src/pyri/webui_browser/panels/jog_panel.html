@@ -46,9 +46,10 @@
             <b-col>Joystick Enable:</b-col>
             <b-col>
               <b-form-group>
-                  <b-form-radio-group id="joystick-enable-radio-group" v-model="selected_joystick_enable" name="joystick-enable-radio" buttons button-variant="dark">
+                  <b-form-radio-group id="joystick-enable-radio-group" v-model="selected_joystick_enable" @change="selected_joystick_enable_changed" name="joystick-enable-radio" buttons button-variant="dark">
                       <b-form-radio value="disable">Disable</b-form-radio>
-                      <b-form-radio value="enable">Enable</b-form-radio>
+                      <b-form-radio value="group1">Group 1</b-form-radio>
+                      <b-form-radio value="group2">Group 2</b-form-radio>
                   </b-form-radio-group>
               </b-form-group>
             </b-col>
