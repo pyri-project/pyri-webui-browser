@@ -287,10 +287,11 @@ class PyriJogPanel(PyriWebUIBrowserPanelBase):
 
     def mouseleave_evt(self,evt):
         self.mousedown = False
-        try:
-            self.vue["$data"].selected_joystick_enable = "disable"
-        except:
-            pass
+        # try:
+        #     self.vue["$data"].selected_joystick_enable = "disable"
+        #     self.vue["$data"].selected_task_joystick_enable = "disable"
+        # except:
+        #     pass
 
     def jog_cart_decrement_mousedown(self, index):
         #self.jog_joints(joint_index+1,-1)
@@ -598,7 +599,8 @@ class PyriJogPanel(PyriWebUIBrowserPanelBase):
                 group = 1
             else:
                 assert False, "Invalid joint jog group"
-                
+            
+            self.vue["$data"].selected_task_joystick_enable = "disable"
             jog = await self.get_jog()
             while self.vue["$data"].selected_joystick_enable == e: 
                 # Call Jog Joint Space Service funtion to handle this jogging
@@ -609,10 +611,38 @@ class PyriJogPanel(PyriWebUIBrowserPanelBase):
 
             #await plugin_jogJointSpace.async_stop_joints(None)
         except:
+            self.vue["$data"].selected_joystick_enable = "disable"
             traceback.print_exc()
 
     def selected_joystick_enable_changed(self,e):
         self.core.loop.create_task(self.async_selected_joystick_enable_changed(e))
+
+    async def async_selected_task_joystick_enable_changed(self,e):
+        try:
+
+            if e == "disable":
+                jog = await self.get_jog()
+                await jog.async_disable_jog_cartesian_joystick(None)
+                return
+            assert e=="enable"
+
+            self.vue["$data"].selected_joystick_enable = "disable"
+                            
+            jog = await self.get_jog()
+            while self.vue["$data"].selected_task_joystick_enable == "enable": 
+                # Call Jog Joint Space Service funtion to handle this jogging
+                # await plugin_jogJointSpace.async_jog_joints2(q_i, sign, None)
+                speed_perc = float(self.vue["$data"].selected_task_speed)
+                
+                await jog.async_enable_jog_cartesian_joystick(speed_perc, "robot", None)
+
+            #await plugin_jogJointSpace.async_stop_joints(None)
+        except:
+            self.vue["$data"].selected_task_joystick_enable = "disable"
+            traceback.print_exc()
+
+    def selected_task_joystick_enable_changed(self,e):
+        self.core.loop.create_task(self.async_selected_task_joystick_enable_changed(e))
 
 
 
@@ -656,7 +686,9 @@ async def add_jog_panel(panel_type: str, core: PyriWebUIBrowser, parent_element:
             "load_joint_pose_options": [],
             "selected_joint_speed": 10,
             "selected_task_speed": 10,
-            "selected_joystick_enable": "disable"
+            "selected_joystick_enable": "disable",
+            "selected_task_joystick_enable": "disable"
+
         },
         "methods":
         {
@@ -676,7 +708,8 @@ async def add_jog_panel(panel_type: str, core: PyriWebUIBrowser, parent_element:
             "delete_joint_pose": jog_panel_obj.delete_joint_pose,
             "tool_open": jog_panel_obj.tool_open,
             "tool_close": jog_panel_obj.tool_close,
-            "selected_joystick_enable_changed": jog_panel_obj.selected_joystick_enable_changed
+            "selected_joystick_enable_changed": jog_panel_obj.selected_joystick_enable_changed,
+            "selected_task_joystick_enable_changed": jog_panel_obj.selected_task_joystick_enable_changed
 
         },
         "computed": 

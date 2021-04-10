@@ -112,6 +112,19 @@
             </td>
         </tr>
         <tr>
+            <th align="center" colspan="2"><H4><br>Joystick Enable:</H4></th>
+        </tr>
+        <tr>
+            <td colspan="2">
+                <b-form-group>
+                    <b-form-radio-group id="joystick-task-enable-radio-group" v-model="selected_task_joystick_enable" @change="selected_task_joystick_enable_changed" name="joystick-task-enable-radio" buttons button-variant="dark">
+                        <b-form-radio value="disable">Disable</b-form-radio>                        
+                        <b-form-radio value="enable">Enable</b-form-radio>
+                    </b-form-radio-group>
+                </b-form-group>
+            </td>
+        </tr>
+        <tr>
             <td COLSPAN="2">
             <table style="text-align: center; display: block; border: 1px solid; ">
                 <Tr> <TH > <H4>Current Pose wrt Base</H4> </TH> </Tr>
