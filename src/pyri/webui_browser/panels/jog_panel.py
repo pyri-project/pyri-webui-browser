@@ -242,7 +242,8 @@ class PyriJogPanel(PyriWebUIBrowserPanelBase):
             while (self.mousedown): 
                 # Call Jog Joint Space Service funtion to handle this jogging
                 # await plugin_jogJointSpace.async_jog_joints2(q_i, sign, None)
-                await jog.async_jog_joints(q_i, sign, None)
+                speed_perc = float(self.vue["$data"].selected_joint_speed)
+                await jog.async_jog_joints(q_i, sign, speed_perc, None)
 
             #await plugin_jogJointSpace.async_stop_joints(None)
         except:
@@ -394,8 +395,9 @@ class PyriJogPanel(PyriWebUIBrowserPanelBase):
 
     async def do_move_to_angles(self,joint_angles):
         try:
-            jog, _ = await self.get_jog()
-            await jog.async_jog_joints_to_angles(joint_angles,None)
+            jog = await self.get_jog()
+            speed_perc = float(self.vue["$data"].selected_joint_speed)
+            await jog.async_jog_joints_to_angles(joint_angles,speed_perc,None)
         except:
             traceback.print_exc()
 
@@ -615,7 +617,9 @@ async def add_jog_panel(panel_type: str, core: PyriWebUIBrowser, parent_element:
             "current_robot": None,
             "current_tool": None,
             "load_joint_pose_selected": "",
-            "load_joint_pose_options": []
+            "load_joint_pose_options": [],
+            "selected_joint_speed": 10,
+            "selected_joystick_enable": "disable"
         },
         "methods":
         {

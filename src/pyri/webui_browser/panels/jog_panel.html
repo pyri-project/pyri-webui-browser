@@ -9,9 +9,10 @@
               Mode: {{ current_robot_mode }} <b-button @click="set_jog_mode">Enable Jog</b-button> <b-button @click="set_halt_mode">Halt</b-button>
             </span>
 </div>
+<br>
 <div>
-    <b-card title="Joint Jog" style="max-width: 30rem; display:inline-block; vertical-align: top;">
-        <b-container class="bv-example-row">
+    <b-card title="Joint Jog" border-variant="dark" style="max-width: 30rem; display:inline-block; vertical-align: top;">
+        <b-container>
             <b-row class="no-gutters">
               <b-col>Min<br>(deg)</b-col><b-col></b-col><b-col>Current<br>(deg)</b-col><b-col></b-col><b-col>Max<br>deg</b-col><b-col>Angle Input<br>(deg)</b-col>
               <div class="w-100"></div>
@@ -28,6 +29,33 @@
             </b-row>
           </b-container>
 
+          <b-container>
+              <b-row align-v="center" no-gutters>
+              <b-col>Jog Speed:</b-col>
+              <b-col>
+                <b-form-group>
+                    <b-form-radio-group id="joint-speed-radio-group" v-model="selected_joint_speed" name="joint-speed-radio" buttons button-variant="dark">
+                        <b-form-radio value="10">10%</b-form-radio>
+                        <b-form-radio value="25">25%</b-form-radio>
+                        <b-form-radio value="50">50%</b-form-radio>
+                        <b-form-radio value="100">100%</b-form-radio>
+                    </b-form-radio-group>
+                </b-form-group>
+              </b-col>
+              <div class="w-100"></div>     
+            <b-col>Joystick Enable:</b-col>
+            <b-col>
+              <b-form-group>
+                  <b-form-radio-group id="joystick-enable-radio-group" v-model="selected_joystick_enable" name="joystick-enable-radio" buttons button-variant="dark">
+                      <b-form-radio value="disable">Disable</b-form-radio>
+                      <b-form-radio value="enable">Enable</b-form-radio>
+                  </b-form-radio-group>
+              </b-form-group>
+            </b-col>
+            <div class="w-100"></div>
+            </b-row>
+        </b-container>
+
           <b-button @click="save_joint_pose">Save Pose</b-button><br>
           <b-form-select v-model="load_joint_pose_selected" :options="load_joint_pose_options" style="width: 250px"></b-form-select><br>
           <b-button @click="load_joint_pose">Load Pose</b-button>
@@ -35,7 +63,7 @@
           <b-button @click="refresh_joint_pose_options">Refresh</b-button>
     </b-card>
 
-    <b-card title="Task Space Jog" style="max-width: 20rem; display:inline-block; vertical-align: top;">
+    <b-card title="Task Space Jog" border-variant="dark" style="max-width: 20rem; display:inline-block; vertical-align: top;">
       <table id="table_TaskSpaceControl" border="0" >
         <Tr>
             <TH align="center" COLSPAN="2"> <H4>Position</H4> </TH>
@@ -81,7 +109,7 @@
     </table>
     </b-card>
 
-    <b-card title="Tool" style="max-width: 30rem; display:inline-block; vertical-align: top;">
+    <b-card title="Tool" border-variant="dark" style="max-width: 30rem; display:inline-block; vertical-align: top;">
         <div>Tool: <b-form-select v-model="current_tool" :options="current_tool_options" style="width: 250px"></b-form-select>
             Status: <span v-if="!current_tool_connected" style="color:red">Disconnected</span>
             <span v-else-if="current_tool_error" style="color:red">Error</span>
