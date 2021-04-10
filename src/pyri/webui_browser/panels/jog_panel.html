@@ -96,6 +96,21 @@
             <td >  <button id="theta_Z_neg_btn" type="button" @mousedown="jog_cart_decrement_mousedown(5)" style="width: 100%">&theta;<sub>Z</sub>-</button> </td>
             <td > <button id="theta_Z_pos_btn" type="button" @mousedown="jog_cart_increment_mousedown(5)" style="width: 100%">&theta;<sub>Z</sub>+</button> </td>
         </tr>
+        <Tr>
+            <TH align="center" COLSPAN="2"> <H4><br>Task Space Jog Speed</H4> </TH>
+        </Tr> 
+        <tr>
+            <td COLSPAN="2">                             
+                <b-form-group>
+                    <b-form-radio-group id="task-speed-radio-group" v-model="selected_task_speed" name="task-speed-radio" buttons button-variant="dark">
+                        <b-form-radio value="10">10%</b-form-radio>
+                        <b-form-radio value="25">25%</b-form-radio>
+                        <b-form-radio value="50">50%</b-form-radio>
+                        <b-form-radio value="100">100%</b-form-radio>
+                    </b-form-radio-group>
+                </b-form-group>              
+            </td>
+        </tr>
         <tr>
             <td COLSPAN="2">
             <table style="text-align: center; display: block; border: 1px solid; ">

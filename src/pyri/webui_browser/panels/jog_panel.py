@@ -41,7 +41,7 @@ class PyriJogPanel(PyriWebUIBrowserPanelBase):
         self.device_manager = device_manager
         self.core = core
         self.jog_connected = False
-
+        
     def init_vue(self,vue):
         self.vue = vue
 
@@ -342,12 +342,15 @@ class PyriJogPanel(PyriWebUIBrowserPanelBase):
         # @burakaksoy RR-Client-WebBrowser-Robot.py:520
         try:
             jog = await self.get_jog()
-            await jog.async_prepare_jog(None)
+            #await jog.async_prepare_jog(None)
                             
             while (self.mousedown):
                 # Call Jog Cartesian Space Service funtion to handle this jogging
                 # await plugin_jogCartesianSpace.async_jog_cartesian(P_axis, R_axis, None)
-                await jog.async_jog_cartesian3(P_axis, R_axis, None)
+                spatial_velocity_dtype = RRN.GetNamedArrayDType("com.robotraconteur.geometry.SpatialVelocity",jog)
+                vel = RRN.ArrayToNamedArray(np.concatenate((R_axis,P_axis)),spatial_velocity_dtype)
+                speed_perc = float(self.vue["$data"].selected_task_speed)
+                await jog.async_jog_cartesian(vel, speed_perc, "robot", None)
 
             #await plugin_jogCartesianSpace.async_stop_joints(None)
         except:
@@ -652,6 +655,7 @@ async def add_jog_panel(panel_type: str, core: PyriWebUIBrowser, parent_element:
             "load_joint_pose_selected": "",
             "load_joint_pose_options": [],
             "selected_joint_speed": 10,
+            "selected_task_speed": 10,
             "selected_joystick_enable": "disable"
         },
         "methods":
