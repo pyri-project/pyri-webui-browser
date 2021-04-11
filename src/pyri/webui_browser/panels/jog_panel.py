@@ -244,6 +244,7 @@ class PyriJogPanel(PyriWebUIBrowserPanelBase):
                 # await plugin_jogJointSpace.async_jog_joints2(q_i, sign, None)
                 speed_perc = float(self.vue["$data"].selected_joint_speed)
                 await jog.async_jog_joints(q_i, sign, speed_perc, None)
+                await RRN.AsyncSleep(0.01,None)
 
             #await plugin_jogJointSpace.async_stop_joints(None)
         except:
@@ -352,6 +353,7 @@ class PyriJogPanel(PyriWebUIBrowserPanelBase):
                 vel = RRN.ArrayToNamedArray(np.concatenate((R_axis,P_axis)),spatial_velocity_dtype)
                 speed_perc = float(self.vue["$data"].selected_task_speed)
                 await jog.async_jog_cartesian(vel, speed_perc, "robot", None)
+                await RRN.AsyncSleep(0.01,None)
 
             #await plugin_jogCartesianSpace.async_stop_joints(None)
         except:
@@ -608,6 +610,7 @@ class PyriJogPanel(PyriWebUIBrowserPanelBase):
                 speed_perc = float(self.vue["$data"].selected_joint_speed)
                 
                 await jog.async_enable_jog_joints_joystick(group, speed_perc, None)
+                await RRN.AsyncSleep(0.01,None)
 
             #await plugin_jogJointSpace.async_stop_joints(None)
         except:
@@ -635,6 +638,7 @@ class PyriJogPanel(PyriWebUIBrowserPanelBase):
                 speed_perc = float(self.vue["$data"].selected_task_speed)
                 
                 await jog.async_enable_jog_cartesian_joystick(speed_perc, "robot", None)
+                await RRN.AsyncSleep(0.01,None)
 
             #await plugin_jogJointSpace.async_stop_joints(None)
         except:

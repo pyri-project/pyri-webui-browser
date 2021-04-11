@@ -108,8 +108,7 @@ class PyriWebUIBrowser:
             self._device_manager.connect_device("sandbox")
 
             self._devices_states_obj_sub = self._device_manager.get_device_subscription("devices_states")
-            self._devices_states_wire_sub = self._devices_states_obj_sub.SubscribeWire("devices_states")
-
+            
             # Run infinite update loop
 
             self._layout.select_panel("welcome")
@@ -121,24 +120,34 @@ class PyriWebUIBrowser:
             traceback.print_exc()
 
     async def update(self):
-        self._seqno += 1
+        try:
+            self._seqno += 1
 
-        if self._seqno % 150 == 0:
-            self.create_task(self.update_devices())
+            if self._seqno % 150 == 0:
+                self.create_task(self.update_devices())
 
-        res, devices_states, _ = self._devices_states_wire_sub.TryGetInValue()
+            res, devices_states_obj = self._devices_states_obj_sub.TryGetDefaultClient()
+            #print(f"devices states TryGetDefaultClient res: {res} {devices_states_obj}")
+            if res:
+                try:
+                    devices_states, _ = await devices_states_obj.devices_states.AsyncPeekInValue(None)
+                except:
+                    traceback.print_exc()
+                    res = False
 
-        if res:
-            self._store.commit("set_devices_states", js.python_to_js(robotraconteur_data_to_plain(devices_states)))
+            if res:
+                self._store.commit("set_devices_states", js.python_to_js(robotraconteur_data_to_plain(devices_states)))
 
-            active_device_names = list(devices_states.devices_states.keys())
-            self._store.commit("set_active_device_names", js.python_to_js(active_device_names))
-            self._devices_states_value = devices_states
-            
-            self._update_device_infos(devices_states)
+                active_device_names = list(devices_states.devices_states.keys())
+                self._store.commit("set_active_device_names", js.python_to_js(active_device_names))
+                self._devices_states_value = devices_states
+                
+                self._update_device_infos(devices_states)
 
-        else:
-            self._devices_states_value = None
+            else:
+                self._devices_states_value = None
+        except:
+            traceback.print_exc()
 
     async def update_devices(self):
         try:
