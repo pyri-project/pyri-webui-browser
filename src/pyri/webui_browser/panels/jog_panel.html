@@ -1,4 +1,4 @@
-<div id="jog_panel_component" @mousedown="mousedown" @mouseup="mouseup" @mouseleave="mouseleave">
+<div id="jog_panel_component" @mousedown="mousedown" @mouseup="mouseup" @mouseleave="mouseleave" class="overflow-auto h-100">
 <div>
     Robot: <b-form-select v-model="current_robot" :options="current_robot_options" style="width: 250px" @change="current_robot_changed"></b-form-select>
     Status: <span v-if="!current_robot_connected" style="color:red">Disconnected</span>

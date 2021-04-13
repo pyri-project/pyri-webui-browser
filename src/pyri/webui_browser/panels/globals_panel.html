@@ -1,4 +1,4 @@
-<div id="globals_table">
+<div id="globals_table" class="overflow-auto h-100 bg-white">
     <b-button @click="refresh_globals_table">Refresh Table</b-button> <b-button @click="new_variable">New Variable</b-button>
     <div class="bootstrap-table"></div>
     <caption>Global Variables</caption>
@@ -24,7 +24,7 @@
                     <td>                        
                         <a class="open" title="Open Variable" @click="variable_open(v.variable_name)"><i class="fas fa-2x fa-folder-open"></i></a>&nbsp;
                         <a class="copy" title="Copy Variable" @click="variable_copy(v.variable_name)"><i class="fas fa-2x fa-copy"></i></a>&nbsp;
-                        <a class="info" title="Variable Info" @click="variable_info(p.variable_name)"><i class="fas fa-2x fa-info-circle"></i></a>&nbsp;
+                        <a class="info" title="Variable Info" @click="variable_info(v.variable_name)"><i class="fas fa-2x fa-info-circle"></i></a>&nbsp;
                         <a class="remove" title="Delete Variable" @click="variable_delete(v.variable_name)"><i class="fas fa-2x fa-trash"></i></a>
                     </td>
                 </tr>
@@ -34,8 +34,3 @@
     </div>
 </div>
 
-<style>
-    #globals_table {
-        background-color: white !important;
-    }
-</style>

@@ -199,7 +199,7 @@ class PyriGlobalsListPanel(PyriWebUIBrowserPanelBase):
         self.core.create_task(self.do_variable_copy(name,copy_name))
 
     def variable_info(self, name):
-        js.window.alert(f"Procedure info: {name}")
+        js.window.alert(f"Variable info: {name}")
 
     async def do_variable_delete(self,name):        
         try:
@@ -209,8 +209,8 @@ class PyriGlobalsListPanel(PyriWebUIBrowserPanelBase):
             pass
 
     def variable_delete(self, name):
-        if js.window.confirm(f"Delete global variable: {name}?"):
-            self.core.create_task(self.do_procedure_delete(name))
+        if js.window.confirm(f"Delete global variable: \"{name}\"?"):
+            self.core.create_task(self.do_variable_delete(name))
 
     async def do_refresh_globals_table(self):
         try:

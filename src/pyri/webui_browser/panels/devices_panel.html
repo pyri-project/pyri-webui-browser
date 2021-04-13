@@ -1,7 +1,8 @@
-<div id="active_devices_table">
+<div id="active_devices_table" class="h-100 overflow-auto bg-white">
     <div><b-button @click="device_add">Add Device</b-button></div>
     <div class="bootstrap-table"></div>
     <caption>Active Devices</caption>
+    <div class="flex-grow-1">
     <table data-toggle="table" data-search="true" data-show-columns="true" class="table table-hover table-bordered" data-card-view="true" data-show-toggle="true" data-search="true">
         <thead>
             <tr>
@@ -39,6 +40,7 @@
             </template>
         </tbody>
     </table>
+    </div>
     <b-modal id="add-device-modal" title="Add Device" ok-only ok-title="Close" hide-header-close modal-class="modal-fullscreen">
         <div><b-button @click="refresh_device_add">Refresh</b-button></div>
         <!--<table id="devices_panel_detected_devices" data-show-cards="true">
@@ -65,10 +67,3 @@
         <bootstrap-table :columns="selected_device_info_columns" :data="selected_device_info" :options="add_device_options" ></bootstrap-table>
     </b-modal>
 </div>
-
-    
-<style>
-    #active_devices_table {
-        background-color: white !important;
-    }
-</style>
