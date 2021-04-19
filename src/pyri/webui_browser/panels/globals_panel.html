@@ -31,6 +31,44 @@
             </template>
         </tbody>
     </table>
-    </div>
+    
+    <template>
+        <div id="globals_new_variable_dialog">
+            <b-modal ref="new_variable_modal" 
+                id="new_variable_modal"
+                title="Create New Global Variable" 
+                @show="reset_new_variable" @hidden="reset_new_variable" 
+                @ok="handle_new_variable"
+                ok-title="Create"
+                hide-header-close
+            >
+                <form ref="new_variable_form" @submit.stop.prevent="handle_new_variable">
+                    <b-form-group
+                        label="New Variable Type"
+                        label-for="new-variable-type-select"
+                    >
+                        <b-form-select
+                            id="new-variable-type-select"
+                            v-model="new_variable_type_selected"
+                            :options="new_variable_type_select_options"
+                        >
+                        </b-form-select>
+                    </b-form-group>
+                    <b-form-group
+                        label="New Variable Name"
+                        label-for="new-variable-name-input"
+                    >
+                        <b-form-input
+                            id="new-variable-name-input"
+                            v-model="new_variable_name"
+                            trim
+                        ></b-form-input>
+                    </b-form-group>
+                </form>
+            </b-modal>
+        </div>
+    </template>
 </div>
+
+
 

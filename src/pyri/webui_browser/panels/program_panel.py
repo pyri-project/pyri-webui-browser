@@ -6,6 +6,7 @@ import js
 import traceback
 from RobotRaconteur.Client import *
 import random
+import re
 
 async def run_procedure(device_manager, name):
     try:
@@ -257,7 +258,63 @@ class PyriGlobalsListPanel(PyriWebUIBrowserPanelBase):
         self.core.create_task(self.do_refresh_globals_table())
     
     def new_variable(self, *args):
-        js.alert("Do new global variable")
+        try:
+            self.reset_new_variable()
+                        
+            self.vue["$bvModal"].show("new_variable_modal")
+        except:
+            traceback.print_exc()
+
+    def reset_new_variable(self, *args):
+        from ..plugins.variable_dialog import get_all_webui_browser_variable_dialog_infos
+        dialog_infos = get_all_webui_browser_variable_dialog_infos()
+        print(dialog_infos)
+
+        select_values=[]
+        for d1 in dialog_infos.values():
+            for d2 in d1.values():
+                v = ",".join([d2.variable_type] + d2.variable_tags)
+                select_values.append({"value": v, "text": d2.display_name})
+
+        self.vue["$data"].new_variable_type_select_options = js.python_to_js(select_values)
+        if len(select_values) > 0:
+            self.vue["$data"].new_variable_type_selected = select_values[0]["value"]
+        self.vue["$data"].new_variable_name = ""        
+
+    def handle_new_variable(self, *args):
+        self.core.create_task(self.do_handle_new_variable())
+
+    def handle_submit(self,*args):
+        pass
+
+    async def do_handle_new_variable(self):
+        try:
+            var_name = self.vue["$data"].new_variable_name
+            m = re.match("^[a-zA-Z](?:\\w*[a-zA-Z0-9])?$", var_name)
+            if not m:
+                js.alert(f"The variable name \"{var_name}\" is invalid")
+                return
+            
+            var_type1 = self.vue["$data"].new_variable_type_selected
+            if len(var_type1) == 0:
+                js.alert(f"The variable type must be selected")
+                return
+            
+            var_type2 = var_type1.split(",")
+            var_type = var_type2[0]
+            var_tags = var_type2[1:]
+            
+            db = self.device_manager.get_device_subscription("variable_storage").GetDefaultClient()
+            ex_var_names = await db.async_filter_variables("globals",var_name,[],None)
+            if len(ex_var_names) > 0:
+                js.alert(f"The variable name \"{var_name}\" already exstis")
+                return
+
+            from ..plugins.variable_dialog import show_webui_browser_variable_new_dialog
+            show_webui_browser_variable_new_dialog(var_name,var_type,var_tags,self.core)
+
+        except:
+            traceback.print_exc()
 
 async def add_program_panel(panel_type: str, core: PyriWebUIBrowser, parent_element: Any):
 
@@ -364,7 +421,12 @@ def add_globals_panel(core):
         "store": core.vuex_store,
         "data":
         {
-            "variables": []
+            "variables": [],
+            "new_variable_type_selectedState": "",
+            "new_variable_type_selected": "",
+            "new_variable_name_inputState": "",
+            "new_variable_name": "",
+            "new_variable_type_select_options": []
         },
         "methods":
         {            
@@ -373,7 +435,11 @@ def add_globals_panel(core):
             "variable_info": globals_list_panel_obj.variable_info,
             "variable_delete": globals_list_panel_obj.variable_delete,
             "refresh_globals_table": globals_list_panel_obj.refresh_globals_table,
-            "new_variable": globals_list_panel_obj.new_variable
+            "new_variable": globals_list_panel_obj.new_variable,
+            "reset_new_variable": globals_list_panel_obj.reset_new_variable,
+            "handle_new_variable": globals_list_panel_obj.handle_new_variable,
+            "handle_submit": globals_list_panel_obj.handle_submit
+
         }
     }))
 
