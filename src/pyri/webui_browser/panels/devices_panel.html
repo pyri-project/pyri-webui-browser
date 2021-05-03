@@ -1,7 +1,7 @@
 <div id="active_devices_table" class="bg-white h-100">    
     <caption>Active Devices</caption>
-    <div id="device_list_toolbar"><b-button variant="danger" @click="device_remove_selected"><i class="fa fa-trash"></i> Remove Selected Devices</b-button><b-button variant="success" @click="device_add"><i class="fa fa-plus-circle"></i> Add Device</b-button></div>
-    <bootstrap-table id="device_list_table" ref="device_list" :columns="device_list_columns" :data="device_list" :options="device_list_options" class="h-100" ></bootstrap-table>
+    <div id="device_list_toolbar"><b-button variant="danger" @click="device_remove_selected"><i class="fa fa-trash"></i> Remove Selected Devices</b-button> <b-button variant="success" @click="device_add"><i class="fa fa-plus-circle"></i> Add Device</b-button></div>
+    <bootstrap-table id="device_list_table" ref="device_list" :columns="device_list_columns" :data="device_list" :options="device_list_options"></bootstrap-table>
     <b-modal id="add-device-modal" title="Add Device" ok-only ok-title="Close" hide-header-close modal-class="modal-fullscreen2">
         <div style="height: calc(100vh - 10rem)">
         <div id="add_device_toolbar"><b-button @click="refresh_device_add"><i class="fa fa-sync"></i> Refresh</b-button></div>

@@ -554,6 +554,10 @@ def add_globals_panel(core):
                     "title": "Data Type"
                 },
                 {
+                    "field": "tags",
+                    "title": "Tags"
+                },
+                {
                     "field": "modified",
                     "title": "Modified"
                 },
