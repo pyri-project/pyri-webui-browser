@@ -14,7 +14,7 @@ class PyriWebUIBrowser:
         self._config = config
         self._layout = PyriGoldenLayout(self)
         self._seqno = 0
-        self._device_manager = DeviceManagerClient(config["device_manager_url"],autoconnect=False)
+        self._device_manager = DeviceManagerClient(config["device_manager_url"],autoconnect=False,tcp_ipv4_only=True)
         self._devices_states_obj_sub = None
         self._devices_states_wire_sub = None
 
@@ -38,20 +38,6 @@ class PyriWebUIBrowser:
 
         def set_device_infos(state, device_infos):
             state.device_infos = device_infos
-
-        self._store = js.window.vuex_store_new(js.python_to_js({
-            "state": {
-                "devices_states": {},
-                "active_device_names": [],
-                "device_infos": {}
-            },
-            "mutations":
-            {
-                "set_devices_states": set_devices_states,
-                "set_active_device_names": set_active_device_names,
-                "set_device_infos": set_device_infos
-            }
-        }))
 
     @property
     def loop(self):
@@ -135,13 +121,9 @@ class PyriWebUIBrowser:
                     traceback.print_exc()
                     res = False
 
-            if res:
-                self._store.commit("set_devices_states", js.python_to_js(robotraconteur_data_to_plain(devices_states)))
-
-                active_device_names = list(devices_states.devices_states.keys())
-                self._store.commit("set_active_device_names", js.python_to_js(active_device_names))
-                self._devices_states_value = devices_states
+            if res:                
                 
+                self._devices_states_value = devices_states                
                 self._update_device_infos(devices_states)
 
             else:
@@ -157,12 +139,19 @@ class PyriWebUIBrowser:
             traceback.print_exc()
 
     @property
-    def vuex_store(self):
-        return self._store
-
-    @property
     def devices_states(self):
         return self._devices_states_value
+
+    @property
+    def active_device_names(self):
+        try:
+            return list(self._devices_states_value.devices_states.keys())
+        except AttributeError:            
+            return []
+
+    @property
+    def device_infos(self):
+        return self._device_infos
 
     def _update_device_infos(self,devices_states):
         try:
@@ -203,8 +192,6 @@ class PyriWebUIBrowser:
                             self._device_infos[d]["extended_info"] = await states.async_getf_extended_device_info(d,None)
                         except:
                             traceback.print_exc()
-
-            self.vuex_store.commit("set_device_infos", js.python_to_js(robotraconteur_data_to_plain(self._device_infos)))
 
         finally:
             self._device_infos_update_running = False

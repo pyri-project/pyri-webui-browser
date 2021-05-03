@@ -1,69 +1,17 @@
-<div id="active_devices_table" class="h-100 overflow-auto bg-white">
-    <div><b-button @click="device_add">Add Device</b-button></div>
-    <div class="bootstrap-table"></div>
+<div id="active_devices_table" class="bg-white h-100">    
     <caption>Active Devices</caption>
-    <div class="flex-grow-1">
-    <table data-toggle="table" data-search="true" data-show-columns="true" class="table table-hover table-bordered" data-card-view="true" data-show-toggle="true" data-search="true">
-        <thead>
-            <tr>
-                <th data-field="local_name">Local Name</th>
-                <th data-field="device_name">Device Name</th>
-                <th data-field="types">Device Types</th>
-                <th data-field="status">Status</th>
-                <th data-field="state_flags">State Flags</th>
-                <th data-field="actions">Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            
-            <template v-for="local_name in $store.state.active_device_names">
-                <tr>
-                    <td>{{ local_name }}</td>
-                    <td>{{ device_name(local_name) }}</td>
-                    <td>
-                        {{ implemented_types(local_name) }}
-                    </td>
-                    <td>
-                    <span v-if="!device_connected(local_name)" style="color:red">Disconnected</span>
-                    <span v-else-if="device_error(local_name)" style="color:red">Error</span>
-                    <span v-else-if="device_ready(local_name)" style="color:green">Ready</span>
-                    <span v-else style="color:yellow">Connected</span>
-                    </td>
-                    <td>
-                        {{ device_state_flags(local_name) }}
-                    </td>
-                    <td>
-                        <a class="info" title="Device Info" @click="device_info(local_name)"><i class="fas fa-2x fa-info-circle"></i></a>&nbsp;
-                        <a class="remove" title="Remove Device" @click="device_remove(local_name)"><i class="fas fa-2x fa-trash"></i></a>
-                    </td>
-                </tr>
-            </template>
-        </tbody>
-    </table>
-    </div>
-    <b-modal id="add-device-modal" title="Add Device" ok-only ok-title="Close" hide-header-close modal-class="modal-fullscreen">
-        <div><b-button @click="refresh_device_add">Refresh</b-button></div>
-        <!--<table id="devices_panel_detected_devices" data-show-cards="true">
-            <thead>
-                <tr>
-                    <th data-field="device">Device</th>
-                    <th data-field="parent_device">Parent Device</th>
-                    <th data-field="manufacturer">Manufacturer</th>
-                    <th data-field="model">Model</th>
-                    <th data-field="serial_number">Serial Number</th>
-                    <th data-field="user_description">User Description</th>
-                    <th data-field="service_name">Service Name</th>
-                    <th data-field="urls">URLs</th>
-                    <th data-field="root_object_type">Root Object Type</th>
-                    <th data-field="root_object_implements">Root Object Implements</th>
-                    <th data-field="action">Actions</th>
-                </tr>
-            </thead>
-        </table>-->
-        <bootstrap-table :columns="add_device_columns" :data="detected_devices" :options="add_device_options" ></bootstrap-table>
+    <div id="device_list_toolbar"><b-button variant="danger" @click="device_remove_selected"><i class="fa fa-trash"></i> Remove Selected Devices</b-button><b-button variant="success" @click="device_add"><i class="fa fa-plus-circle"></i> Add Device</b-button></div>
+    <bootstrap-table id="device_list_table" ref="device_list" :columns="device_list_columns" :data="device_list" :options="device_list_options" class="h-100" ></bootstrap-table>
+    <b-modal id="add-device-modal" title="Add Device" ok-only ok-title="Close" hide-header-close modal-class="modal-fullscreen2">
+        <div style="height: calc(100vh - 10rem)">
+        <div id="add_device_toolbar"><b-button @click="refresh_device_add"><i class="fa fa-sync"></i> Refresh</b-button></div>
+        <bootstrap-table ref="add_device_table" :columns="add_device_columns" :data="detected_devices" :options="add_device_options" ></bootstrap-table>
+        </div>
     </b-modal>
 
     <b-modal id="device-info-modal" title="Device Info" ok-only ok-title="Close" hide-header-close modal-class="modal-fullscreen">
-        <bootstrap-table :columns="selected_device_info_columns" :data="selected_device_info" :options="add_device_options" ></bootstrap-table>
+        <div style="height: calc(100vh - 10rem)">
+        <bootstrap-table :columns="selected_device_info_columns" :data="selected_device_info" :options="selected_device_options" ></bootstrap-table>
+        </div>
     </b-modal>
 </div>

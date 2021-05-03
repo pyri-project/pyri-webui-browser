@@ -1,13 +1,10 @@
 <div id="jog_panel_component" @mousedown="mousedown" @mouseup="mouseup" @mouseleave="mouseleave" class="overflow-auto h-100">
 <div>
     Robot: <b-form-select v-model="current_robot" :options="current_robot_options" style="width: 250px" @change="current_robot_changed"></b-form-select>
-    Status: <span v-if="!current_robot_connected" style="color:red">Disconnected</span>
-            <span v-else-if="current_robot_error" style="color:red">Error</span>
-            <span v-else-if="current_robot_ready" style="color:green">Ready</span>
-            <span v-else style="color:yellow">Connected</span>
-            <span v-if="current_robot_connected">
+    Status: <span :class="('device_status_text_' + current_robot_status)"></span>
+            
               Mode: {{ current_robot_mode }} <b-button @click="set_jog_mode">Enable Jog</b-button> <b-button @click="set_halt_mode">Halt</b-button>
-            </span>
+            
 </div>
 <br>
 <div>
@@ -16,10 +13,10 @@
             <b-row class="no-gutters">
               <b-col>Min<br>(deg)</b-col><b-col></b-col><b-col>Current<br>(deg)</b-col><b-col></b-col><b-col>Max<br>deg</b-col><b-col>Angle Input<br>(deg)</b-col>
               <div class="w-100"></div>
-              <template v-for="(j, index) in joint_state">
+              <template v-for="(j, index) in joint_state" :key="j.joint_number">
                 <b-col>{{ j.lower }}</b-col>
                 <b-col><b-button @mousedown="jog_decrement_mousedown(index)">J{{ index+1 }}-</b-button></b-col>
-                <b-col>{{ j.current }}</b-col>
+                <b-col><span :id="'joint_pos_' + index"></span></b-col>
                 <b-col><b-button @mousedown="jog_increment_mousedown(index)">J{{ index+1 }}+</b-button></b-col>
                 <b-col>{{ j.upper }}</b-col>
                 <b-col><input type="text" :id="'j' + index + '_angle_in'" :placeholder="j.current" value="0" type="number"></b-col>
@@ -140,12 +137,10 @@
 
     <b-card title="Tool" border-variant="dark" style="max-width: 30rem; display:inline-block; vertical-align: top;">
         <div>Tool: <b-form-select v-model="current_tool" :options="current_tool_options" style="width: 250px"></b-form-select>
-            Status: <span v-if="!current_tool_connected" style="color:red">Disconnected</span>
-            <span v-else-if="current_tool_error" style="color:red">Error</span>
-            <span v-else-if="current_tool_ready" style="color:green">Ready</span>
-            <span v-else style="color:yellow">Connected</span>
-            <span v-if="current_tool_connected">
+            Status: <span :class="('device_status_text_' + current_tool_status)"></span>
+            
         </div>
+        
         <b-button @click="tool_open()">Open Tool</b-button><b-button @click="tool_close()">Close Tool</b-button>
     </b-card>
 

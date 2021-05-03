@@ -6,6 +6,8 @@ import js
 import traceback
 from RobotRaconteur.Client import *
 
+from .. import util
+
 import numpy as np
 
 def R2rpy(R):
@@ -44,34 +46,7 @@ class PyriJogPanel(PyriWebUIBrowserPanelBase):
         
     def init_vue(self,vue):
         self.vue = vue
-
-    def current_robot_options(self, vue, *args):
-                
-        robot_device_names = []
-
-        for local_name in vue["$store"].state.active_device_names:
-            
-            try:
-                device_infos = vue["$store"].state.device_infos[local_name]
-            except KeyError:
-                traceback.print_exc()
-                continue
-            try:                
-                root_object_type = device_infos.device_info.root_object_type
-                if root_object_type == "com.robotraconteur.robotics.robot.Robot":
-                    robot_device_names.append({"value": local_name, "text": local_name})
-                    continue
-                root_object_implements = device_infos.device_info.root_object_implements
-                if "com.robotraconteur.robotics.robot.Robot" in root_object_implements:
-                    robot_device_names.append({"value": local_name, "text": local_name})
-                    continue           
-            except AttributeError:
-                traceback.print_exc()
-                continue
-
-        return js.python_to_js(robot_device_names)
-
-    
+   
     def watch_current_robot_options(self, new_value, *args):
         if new_value.length > 0:
             if self.vue["$data"].current_robot is None:
@@ -79,43 +54,40 @@ class PyriJogPanel(PyriWebUIBrowserPanelBase):
         else:
             self.vue["$data"].current_robot = None
 
-    def joint_state(self, vue, *args):
+    def joint_state(self):
         
-        current_robot = vue["$data"].current_robot
+        current_robot = self.vue["$data"].current_robot
         if current_robot is None:
-            return []
+            return [], []
 
         ret = []
+        ret2 = []
         joint_info = None
         joint_position = None
         try:
-            joint_info = vue["$store"].state.device_infos[current_robot].extended_info["com.robotraconteur.robotics.robot.RobotInfo"].joint_info
-        except AttributeError:
-            #traceback.print_exc()
-            pass
-            
-        except KeyError:
-            #traceback.print_exc()
+            joint_info = self.core.device_infos[current_robot]["extended_info"]["com.robotraconteur.robotics.robot.RobotInfo"].data.joint_info
+        except AttributeError:            
+            pass            
+        except KeyError:            
             pass
 
         if joint_info is None:
-            return []      
+            return [], []
 
         try:
-            e_state = vue["$store"].state.devices_states.devices_states[current_robot].state
+            e_state = self.core.devices_states.devices_states[current_robot].state
             if e_state is not None:
                 for e in e_state:
                     if e.type == "com.robotraconteur.robotics.robot.RobotState":
-                        joint_position = e.state_data.joint_position
+                        joint_position = e.state_data.data.joint_position
         except AttributeError:
             traceback.print_exc()
         except KeyError:
-            traceback.print_exc()
-
-        
+            traceback.print_exc()        
 
         for i in range(len(joint_info)):
             v = dict()
+            v["joint_number"] = i
             if joint_info is not None:
                 v["lower"]= f"{np.rad2deg(joint_info[i].joint_limits.lower):.2f}"
                 v["upper"]= f"{np.rad2deg(joint_info[i].joint_limits.upper):.2f}"
@@ -125,28 +97,28 @@ class PyriJogPanel(PyriWebUIBrowserPanelBase):
 
             if joint_position is not None:
                 try:
-                    v["current"] = f"{np.rad2deg(joint_position[i]):.2f}"
+                    ret2.append(f"{np.rad2deg(joint_position[i]):.2f}")
                 except KeyError:
-                    v["current"] = "N/A"
+                    ret2.append("N/A")
             else:
-                v["current"] = "N/A"
+                ret2.append("N/A")
             
             ret.append(v)        
-        return js.python_to_js(ret)
+        return ret, ret2
 
-    def current_robot_mode(self, vue, *args):
-        current_robot = vue["$data"].current_robot
+    def current_robot_mode(self):
+        current_robot = self.vue["$data"].current_robot
         if current_robot is None:
             return "Invalid"
 
         mode = "Invalid"
 
         try:
-            e_state = vue["$store"].state.devices_states.devices_states[current_robot].state
+            e_state = self.core.devices_states.devices_states[current_robot].state
             if e_state is not None:
                 for e in e_state:
                     if e.type == "com.robotraconteur.robotics.robot.RobotState":
-                        command_mode = e.state_data.command_mode
+                        command_mode = e.state_data.data.command_mode
 
                         if command_mode < 0:
                             mode = "Error"
@@ -174,42 +146,42 @@ class PyriJogPanel(PyriWebUIBrowserPanelBase):
     def current_robot_connected(self, vue, *args):
         try:
             current_robot = vue["$data"].current_robot
-            return vue["$store"].state.devices_states.devices_states[current_robot].connected
+            return self.core.devices_states.devices_states[current_robot].connected
         except:
             return False
 
     def current_robot_error(self, vue, *args):
         try:
             current_robot = vue["$data"].current_robot
-            return vue["$store"].state.devices_states.devices_states[current_robot].error
+            return self.core.devices_states.devices_states[current_robot].error
         except:
             return True
 
     def current_robot_ready(self, vue, *args):
         try:
             current_robot = vue["$data"].current_robot
-            return vue["$store"].state.devices_states.devices_states[current_robot].ready
+            return self.core.devices_states.devices_states[current_robot].ready
         except:
             return False
 
     def current_tool_connected(self, vue, *args):
         try:
             current_tool = vue["$data"].current_tool
-            return vue["$store"].state.devices_states.devices_states[current_tool].connected
+            return self.core.devices_states.devices_states[current_tool].connected
         except:
             return False
 
     def current_tool_error(self, vue, *args):
         try:
             current_tool = vue["$data"].current_tool
-            return vue["$store"].state.devices_states.devices_states[current_tool].error
+            return self.core.devices_states.devices_states[current_tool].error
         except:
             return True
 
     def current_tool_ready(self, vue, *args):
         try:
             current_tool = vue["$data"].current_tool
-            return vue["$store"].state.devices_states.devices_states[current_tool].ready
+            return self.core.devices_states.devices_states[current_tool].ready
         except:
             return False
 
@@ -359,14 +331,14 @@ class PyriJogPanel(PyriWebUIBrowserPanelBase):
         except:
             traceback.print_exc()
         
-    def cur_ZYX_angles(self, vue, *args):
-        current_robot = vue["$data"].current_robot
+    def cur_ZYX_angles(self):
+        current_robot = self.vue["$data"].current_robot
         if current_robot is None:
             return ""
 
         current_rpy = ""
         try:
-            e_state = vue["$store"].state.devices_states.devices_states[current_robot].state
+            e_state = self.core.devices_states.devices_states[current_robot].state
             if e_state is not None:
                 for e in e_state:
                     if e.type == "com.robotraconteur.robotics.robot.RobotState":
@@ -381,15 +353,15 @@ class PyriJogPanel(PyriWebUIBrowserPanelBase):
 
         return current_rpy
 
-    def cur_position(self, vue, *args):
+    def cur_position(self):
 
-        current_robot = vue["$data"].current_robot
+        current_robot = self.vue["$data"].current_robot
         if current_robot is None:
             return ""
 
         current_position = ""
         try:
-            e_state = vue["$store"].state.devices_states.devices_states[current_robot].state
+            e_state =self.core.devices_states.devices_states[current_robot].state
             if e_state is not None:
                 for e in e_state:
                     if e.type == "com.robotraconteur.robotics.robot.RobotState":
@@ -414,7 +386,7 @@ class PyriJogPanel(PyriWebUIBrowserPanelBase):
     def get_target_joint_angles(self):
         try:
             current_robot = self.vue["$data"].current_robot
-            joint_info = self.vue["$store"].state.device_infos[current_robot].extended_info["com.robotraconteur.robotics.robot.RobotInfo"].joint_info
+            joint_info = self.core.device_infos[current_robot].extended_info["com.robotraconteur.robotics.robot.RobotInfo"].joint_info
         except:
             traceback.print_exc()
             js.alert("Robot not selected!")
@@ -493,7 +465,7 @@ class PyriJogPanel(PyriWebUIBrowserPanelBase):
         joint_pose_name = js.prompt("Joint Pose Name")
         current_robot = self.vue["$data"].current_robot
         joint_angles = None
-        e_state = self.vue["$store"].state.devices_states.devices_states[current_robot].state
+        e_state = self.core.devices_states.devices_states[current_robot].state
         if e_state is not None:
             for e in e_state:
                 if e.type == "com.robotraconteur.robotics.robot.RobotState":
@@ -516,33 +488,6 @@ class PyriJogPanel(PyriWebUIBrowserPanelBase):
     def delete_joint_pose(self,evt):
         self.core.create_task(self.do_delete_joint_pose())
 
-    def current_tool_options(self, vue, *args):
-                
-        tool_device_names = []
-
-        for local_name in vue["$store"].state.active_device_names:
-            
-            try:
-                device_infos = vue["$store"].state.device_infos[local_name]
-            except KeyError:
-                traceback.print_exc()
-                continue
-            try:                
-                root_object_type = device_infos.device_info.root_object_type
-                if root_object_type == "com.robotraconteur.robotics.tool.Tool":
-                    tool_device_names.append({"value": local_name, "text": local_name})
-                    continue
-                root_object_implements = device_infos.device_info.root_object_implements
-                if "com.robotraconteur.robotics.tool.Tool" in root_object_implements:
-                    tool_device_names.append({"value": local_name, "text": local_name})
-                    continue           
-            except AttributeError:
-                traceback.print_exc()
-                continue
-
-        return js.python_to_js(tool_device_names)
-
-    
     def watch_current_tool_options(self, new_value, *args):
         if new_value.length > 0:
             if self.vue["$data"].current_tool is None:
@@ -650,7 +595,76 @@ class PyriJogPanel(PyriWebUIBrowserPanelBase):
 
     def current_robot_changed(self,e):
         self.vue["$data"].selected_joystick_enable = "disable"
-        self.vue["$data"].selected_task_joystick_enable = "disable"        
+        self.vue["$data"].selected_task_joystick_enable = "disable"
+
+
+    async def run(self):
+             
+        last_robots = set()
+        last_tools = set()
+        last_joint_state = []
+
+        joint_pos_els = []
+        
+        while True:
+            try:
+                devices_states = self.core.devices_states
+                
+                new_robots = util.get_devices_with_type(self.core,"com.robotraconteur.robotics.robot.Robot")
+                new_tools = util.get_devices_with_type(self.core,"com.robotraconteur.robotics.tool.Tool")
+                if set(new_robots) != last_robots:
+                    self.vue["$data"].current_robot_options = js.python_to_js(util.device_names_to_dropdown_options(new_robots))                    
+                    last_robots = set(new_robots)
+
+                if set(new_tools) != last_tools:
+                    self.vue["$data"].current_tool_options = js.python_to_js(util.device_names_to_dropdown_options(new_tools))
+                    last_tools = set(new_tools)
+                
+                try:
+                    self.vue["$data"].current_robot_status = util.device_status_name(devices_states,self.vue["$data"].current_robot)
+                    self.vue["$data"].current_robot_mode = self.current_robot_mode()
+                except:
+                    traceback.print_exc()
+
+                try:
+                    self.vue["$data"].current_tool_status = util.device_status_name(devices_states,self.vue["$data"].current_tool)
+                except:
+                    traceback.print_exc()
+
+                
+                try:
+                    joint_state, joint_pos = self.joint_state()
+                    if last_joint_state != joint_state:
+                        self.vue["$data"].joint_state = js.python_to_js(joint_state)
+                        last_joint_state = joint_state
+                        joint_pos_els = []
+                    
+                    if len(joint_pos_els) != len(joint_pos):
+                        for i in range(len(joint_pos)):
+                            jpos_el = js.document.getElementById(f"joint_pos_{i}")
+                            if jpos_el is None:
+                                joint_pos_els = []
+                                break
+                            joint_pos_els.append(jpos_el)
+
+                    for i in range(len(joint_pos_els)):
+                        joint_pos_els[i].textContent = joint_pos[i]
+                    
+                except:
+                    traceback.print_exc()
+
+                try:
+                    self.vue["$data"].cur_ZYX_angles = self.cur_ZYX_angles()
+                    self.vue["$data"].cur_position = self.cur_position()
+                except:
+                    traceback.print_exc()
+
+            except:
+                traceback.print_exc()
+            
+
+            #self.vue["$forceUpdate"]()
+            await RRN.AsyncSleep(0.1,None)
 
 
 
@@ -685,17 +699,25 @@ async def add_jog_panel(panel_type: str, core: PyriWebUIBrowser, parent_element:
 
     jog_panel = js.Vue.new(js.python_to_js({
         "el": "#jog_panel_component",
-        "store": core.vuex_store,
         "data":
         {
             "current_robot": None,
             "current_tool": None,
+            "current_robot_options": [],
+            "current_robot_status": "disconnected",
+            "current_tool_options": [],
+            "current_tool_status": "disconnected",
+            "current_robot_mode": "Invalid",
             "load_joint_pose_selected": "",
             "load_joint_pose_options": [],
             "selected_joint_speed": 10,
             "selected_task_speed": 10,
             "selected_joystick_enable": "disable",
-            "selected_task_joystick_enable": "disable"
+            "selected_task_joystick_enable": "disable",
+            "joint_state": [],
+            "cur_ZYX_angles": "",
+            "cur_position": "jog_panel_obj.cur_position",
+            "joint_pos": []
 
         },
         "methods":
@@ -721,21 +743,6 @@ async def add_jog_panel(panel_type: str, core: PyriWebUIBrowser, parent_element:
             "selected_task_joystick_enable_changed": jog_panel_obj.selected_task_joystick_enable_changed
 
         },
-        "computed": 
-        {
-            "current_robot_options": jog_panel_obj.current_robot_options,
-            "current_robot_connected": jog_panel_obj.current_robot_connected,
-            "current_robot_error": jog_panel_obj.current_robot_error,
-            "current_robot_ready": jog_panel_obj.current_robot_ready,
-            "joint_state": jog_panel_obj.joint_state,
-            "current_robot_mode": jog_panel_obj.current_robot_mode,
-            "cur_ZYX_angles": jog_panel_obj.cur_ZYX_angles,
-            "cur_position": jog_panel_obj.cur_position,
-            "current_tool_options": jog_panel_obj.current_tool_options,
-            "current_tool_connected": jog_panel_obj.current_tool_connected,
-            "current_tool_error": jog_panel_obj.current_tool_error,
-            "current_tool_ready": jog_panel_obj.current_tool_ready,
-        },
         "watch":
         {
             "current_robot_options": jog_panel_obj.watch_current_robot_options,
@@ -745,5 +752,7 @@ async def add_jog_panel(panel_type: str, core: PyriWebUIBrowser, parent_element:
     }))
 
     jog_panel_obj.init_vue(jog_panel)
+
+    core.create_task(jog_panel_obj.run())
 
     return jog_panel_obj

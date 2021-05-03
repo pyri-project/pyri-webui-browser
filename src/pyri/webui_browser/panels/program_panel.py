@@ -360,7 +360,6 @@ async def add_program_panel(panel_type: str, core: PyriWebUIBrowser, parent_elem
 
     program_panel = js.Vue.new(js.python_to_js({
         "el": "#procedures_table",
-        "store": core.vuex_store,
         "data":
         {
             "procedures": []
@@ -418,7 +417,6 @@ def add_globals_panel(core):
 
     globals_panel = js.Vue.new(js.python_to_js({
         "el": "#globals_table",
-        "store": core.vuex_store,
         "data":
         {
             "variables": [],
@@ -468,7 +466,6 @@ class PyriBlocklyProgramPanel(PyriWebUIBrowserPanelBase):
                 
         procedure_panel = js.Vue.new(js.python_to_js({
             "el": res,
-            "store": core.vuex_store,
             "data":
             {
                 "procedure_name": procedure_name

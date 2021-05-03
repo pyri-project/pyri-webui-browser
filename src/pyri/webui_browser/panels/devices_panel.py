@@ -7,6 +7,9 @@ import traceback
 from RobotRaconteurCompanion.Util.IdentifierUtil import IdentifierUtil
 from RobotRaconteur.RobotRaconteurPythonUtil import SplitQualifiedName
 
+from RobotRaconteur.Client import *
+from .. import util
+
 class PyriDevicesPanel(PyriWebUIBrowserPanelBase):
 
     def __init__(self, device_manager, core):
@@ -17,7 +20,7 @@ class PyriDevicesPanel(PyriWebUIBrowserPanelBase):
     def init_vue(self,vue):
         self.vue = vue
 
-    def refresh_device_add(self, evt):
+    def refresh_device_add(self, *args):
         self.core.create_task(self.do_refresh_device_add())
 
     async def do_refresh_device_add(self):
@@ -48,7 +51,7 @@ class PyriDevicesPanel(PyriWebUIBrowserPanelBase):
 
 
     def device_add(self, evt):
-        self.vue["$bvModal"].show("add-device-modal")
+        self.vue["$bvModal"].show("add-device-modal")        
         self.core.create_task(self.do_refresh_device_add())
 
     async def do_add_device_selected(self,selected_device,local_dev_name):
@@ -107,7 +110,40 @@ class PyriDevicesPanel(PyriWebUIBrowserPanelBase):
         
 
     def device_remove(self, dev_name):
+        ret = js.confirm(f"Remove device {dev_name}?")
+        if not ret:
+            return
         self.core.create_task(self.do_device_remove(dev_name))
+
+    async def do_device_remove_selected(self,dev_names):
+        try:            
+            dev_manager = self.device_manager.device_manager.GetDefaultClient()
+            for dev_name in dev_names:
+                await dev_manager.async_remove_device(dev_name,None)
+        except:
+            traceback.print_exc()
+            js.alert(f"Device remove failed:\n\n{traceback.format_exc()}")
+        
+
+    def device_remove_selected(self, *args):
+        
+        b_device_table = self.vue["$refs"].device_list
+        selections = b_device_table.getSelections()
+        dev_names = []
+        count = len(selections)
+        for i in range(count):
+            t = selections[i]
+            print(f"dev: {t['local_name']}")
+            dev_names.append(t["local_name"])
+
+        if len(dev_names) == 0:
+            return
+
+        dev_names_text = ", ".join(dev_names)
+        ret = js.confirm(f"Remove devices {dev_names_text}?")
+        if not ret:
+            return
+        self.core.create_task(self.do_device_remove_selected(dev_names))
 
     def implemented_types(self, local_name):
         if self.vue is None:
@@ -117,70 +153,111 @@ class PyriDevicesPanel(PyriWebUIBrowserPanelBase):
         device_infos = None
 
         try:
-            device_infos = self.vue["$store"].state.device_infos[local_name]
+            device_infos = self.core.device_infos[local_name]
         except KeyError:
             return ""
         try:            
-            implemented_types = [SplitQualifiedName(device_infos.device_info.root_object_type)[1]]
-            root_object_implements = device_infos.device_info.root_object_implements
+            implemented_types = [SplitQualifiedName(device_infos["device_info"].root_object_type)[1]]
+            root_object_implements = device_infos["device_info"].root_object_implements
             if root_object_implements is not None:
                 implemented_types+= [SplitQualifiedName(r)[1] for r in root_object_implements]
             
         except:
             return ""
         return ", ".join(implemented_types)
-
-    def device_state_flags(self, local_name):
-        if self.vue is None:
-            return ""
+    
+    async def run(self):
+        await RRN.AsyncSleep(0.1,None)
         
-        state_flags = []
-        try:
-            typed_device_states = self.vue["$store"].state.devices_states.devices_states[local_name].state
-        except KeyError:
-            return ""
+        last_devices = set()
 
-        if typed_device_states is None:
-            return ""
+        device_table = []
+                
+        while True:
+            try:
+                devices_states = self.core.devices_states
+                new_devices = self.core.active_device_names                
+                table_updated = False
+                if set(new_devices) != last_devices:
+                    #TODO: Remove old code
+                    # self.vue["$data"].active_device_names = js.python_to_js(new_devices)             
+                    # last_devices = set(new_devices)                    
+                    # for d in last_devices:
+                    #     try:
+                    #         self.vue["$data"].device_names[d] = devices_states.devices_states[d].device.name
+                    #         self.vue["$data"].device_state_flags[d] = util.device_state_flags(devices_states, d)
+                    #     except:
+                    #         pass
+                    last_devices = set(new_devices)
+                    new_table = []
+                    for d in last_devices:
+                        d1 = {
+                            "local_name": d,
+                            "device_name": "",
+                            "types": "",
+                            "status": "disconnected",
+                            "state_flags": "",
+                            "select": False
+                        }
+                        
+                        try:
+                            d["device_name"] = devices_states.devices_states[d].device.name
+                            d["device_state_flag"] = util.device_state_flags(devices_states, d)
+                        except:
+                            pass
+                        new_table.append(d1)
+                    self.vue["$data"].device_list = js.python_to_js(new_table)
+                    device_table = new_table
+                    table_updated = True                    
+                            
+                if not table_updated:
+                    b_device_table = self.vue["$refs"].device_list                    
 
-        for v in typed_device_states:
-            f = v.display_flags
-            if f is not None:
-                state_flags.extend(f)
+                    for i in range(len(device_table)):
+                        t = device_table[i]
+                        d = t["local_name"]                        
+                        try:                            
+                            new_status = util.device_status_name(devices_states,d)
+                            if t["status"] != new_status:                                
+                                b_device_table.updateCell(js.python_to_js({"index": i, "field": "status", "value": new_status}))                                
+                                t["status"] = new_status
+                            
+                            new_flags = util.device_state_flags(devices_states, d)
+                            if t["state_flags"] != new_flags:
+                                b_device_table.updateCell(js.python_to_js({"index": i, "field": "state_flags", "value": new_flags}))
+                                t["state_flags"] = new_flags
+                        except:
+                            traceback.print_exc()
 
-        return " ".join(state_flags)
+                        try:
+                            d_name = devices_states.devices_states[d].device.name
+                            if t["device_name"] != d_name:
+                                b_device_table.updateCell(js.python_to_js({"index": i, "field": "device_name", "value": d_name}))
+                                t["device_name"] = d_name
+                        except:
+                            pass
 
-    def device_name(self, local_name):
-        try:
-            return self.vue["$store"].state.devices_states.devices_states[local_name].device.name
-        except KeyError:
-            return ""
-        except AttributeError:
-            return ""
+                        try:
+                            implemented_types = self.implemented_types(d)                            
+                            if t["types"] != implemented_types:
+                                b_device_table.updateCell(js.python_to_js({"index": i, "field": "types", "value": implemented_types}))
+                                t["types"] = implemented_types
+                        except:
+                            traceback.print_exc()
+                            pass
 
-    def device_connected(self, local_name):
-        try:
-            return self.vue["$store"].state.devices_states.devices_states[local_name].connected
-        except KeyError:
-            return ""
-        except AttributeError:
-            return ""
+                        #new_flags[d] = ""
+                        #new_status[d] = "error"
 
-    def device_ready(self, local_name):
-        try:
-            return self.vue["$store"].state.devices_states.devices_states[local_name].ready
-        except KeyError:
-            return ""
-        except AttributeError:
-            return ""
+                #self.vue["$data"].active_device_status = js.python_to_js(new_status)
+                        
+                #self.vue["$data"].device_state_flags = js.python_to_js(new_flags)
 
-    def device_error(self, local_name):
-        try:
-            return self.vue["$store"].state.devices_states.devices_states[local_name].error
-        except KeyError:
-            return ""
-        except AttributeError:
-            return ""
+            except:
+                traceback.print_exc()
+                self.vue["$data"].device_list = []
+            
+            await RRN.AsyncSleep(0.5,None)
         
 
 async def add_devices_panel(panel_type: str, core: PyriWebUIBrowser, parent_element: Any):
@@ -198,8 +275,6 @@ async def add_devices_panel(panel_type: str, core: PyriWebUIBrowser, parent_elem
         "isClosable": False
     }
 
-    gl = core.layout.layout
-
     def register_devices_panel(container, state):
         container.getElement().html(devices_panel_html)
 
@@ -213,14 +288,64 @@ async def add_devices_panel(panel_type: str, core: PyriWebUIBrowser, parent_elem
 
     devices_panel = js.Vue.new(js.python_to_js({
         "el": "#active_devices_table",
-        "store": core.vuex_store,
         "components": {
             "BootstrapTable": js.window.BootstrapTable
         },
         "data":
         {
+            "active_device_names": [],                                    
             "detected_devices": [],
             "selected_device_info": [],
+            "device_list_columns":
+            [
+                {
+                    "field": "select",
+                    "checkbox": True
+                },
+                {
+                    "title": "Local Name",
+                    "field": "local_name"
+                },
+                {
+                    "title": "Device Name",
+                    "field": "device_name",
+                },
+                {
+                    "title": "Device Types",
+                    "field": "types"
+                },
+                {
+                    "title": "Status",
+                    "field": "status",
+                    "formatter": lambda value,row,index,field: f"<span class=\"{'device_status_text_' + value}\"></span>"
+                },
+                {
+                    "title": "State Flags",
+                    "field": "state_flags"
+                },
+                {
+                    "title": "Action",
+                    "field": "actions",                    
+                    "formatter": lambda a,b,c,d: """<a class="device_list_info" title="Device Info" @click=""><i class="fas fa-2x fa-info-circle"></i></a>&nbsp;
+                                                    <a class="device_list_remove" title="Remove Device" @click="device_remove(local_name)"><i class="fas fa-2x fa-trash"></i></a>""",
+                    "events":
+                    {
+                        "click .device_list_info": lambda e, value, row, d: devices_panel_obj.device_info(row["local_name"]),
+                        "click .device_list_remove": lambda e, value, row, d: devices_panel_obj.device_remove(row["local_name"])
+                    }
+                }
+            ],            
+            "device_list_options": {
+                "search": False,
+                "showColumns": False,
+                "showToggle": True,
+                "search": True,
+                "showSearchClearButton": True,
+                "showRefresh": False,
+                "cardView": True,
+                "toolbar": "#device_list_toolbar"
+            },
+            "device_list": [],
             "add_device_columns": [
                 {
                     "title": "Device",
@@ -316,11 +441,23 @@ async def add_devices_panel(panel_type: str, core: PyriWebUIBrowser, parent_elem
                 }
             ],
             "add_device_options": {
-                "search": False,
-                "showColumns": True,
+                "search": True,
+                "showSearchClearButton": True,
+                "showToggle": True,
+                "showColumns": False,
                 "cardView": True,
-                "height": 460
+                "showRefresh": False,
+                "toolbar": "#add_device_toolbar"
+            },
+            "selected_device_options": {
+                "search": True,
+                "showSearchClearButton": True,
+                "showToggle": True,
+                "showColumns": False,
+                "cardView": True,
+                "showRefresh": False
             }
+
             
         },
         "methods":
@@ -329,15 +466,13 @@ async def add_devices_panel(panel_type: str, core: PyriWebUIBrowser, parent_elem
             "device_add": devices_panel_obj.device_add,
             "device_info": devices_panel_obj.device_info,
             "device_remove": devices_panel_obj.device_remove,
+            "device_remove_selected": devices_panel_obj.device_remove_selected,
             "implemented_types": devices_panel_obj.implemented_types,
-            "device_state_flags": devices_panel_obj.device_state_flags,
-            "device_name": devices_panel_obj.device_name,
-            "device_connected": devices_panel_obj.device_connected,
-            "device_error": devices_panel_obj.device_error,
-            "device_ready": devices_panel_obj.device_ready,
         }
     }))
 
     devices_panel_obj.init_vue(devices_panel)
+
+    core.create_task(devices_panel_obj.run())
 
     return devices_panel_obj
