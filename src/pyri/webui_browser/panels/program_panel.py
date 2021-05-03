@@ -243,6 +243,34 @@ class PyriGlobalsListPanel(PyriWebUIBrowserPanelBase):
         if js.window.confirm(f"Delete global variable: \"{name}\"?"):
             self.core.create_task(self.do_variable_delete(name))
 
+    async def do_variable_delete_selected(self,names):
+        try:
+            var_storage = self.device_manager.get_device_subscription("variable_storage").GetDefaultClient()
+            for name in names:
+                await var_storage.async_delete_variable("globals", name, None)
+        except:
+            pass
+
+    def variable_delete_selected(self, *args):
+        
+        b_globals_table = self.vue["$refs"].globals_list
+        selections = b_globals_table.getSelections()
+        names = []
+        count = len(selections)
+        for i in range(count):
+            t = selections[i]
+            names.append(t["variable_name"])
+
+        if len(names) == 0:
+            return
+
+        names_text = ", ".join(names)
+        ret = js.confirm(f"Delete variables {names_text}?")
+        if not ret:
+            return
+
+        self.core.create_task(self.do_variable_delete_selected(names))
+
     async def do_refresh_globals_table(self):
         try:
         
@@ -501,14 +529,67 @@ def add_globals_panel(core):
 
     globals_panel = js.Vue.new(js.python_to_js({
         "el": "#globals_table",
+        "components": {
+            "BootstrapTable": js.window.BootstrapTable
+        },
         "data":
         {
             "variables": [],
+            "variables_columns":
+            [
+                {
+                    "field": "select",
+                    "checkbox": True
+                },
+                {
+                    "field": "variable_name",
+                    "title": "Name"
+                },
+                {
+                    "field": "docstring",
+                    "title": "Docstring"
+                },
+                {
+                    "field": "data_type",
+                    "title": "Data Type"
+                },
+                {
+                    "field": "modified",
+                    "title": "Modified"
+                },
+                {
+                    "field": "actions",
+                    "title": "Actions",
+                    "formatter": lambda a,b,c,d: """
+                                                <a class="globals_table_open" title="Open Variable"><i class="fas fa-2x fa-folder-open"></i></a>&nbsp;
+                                                <a class="globals_table_copy" title="Copy Variable"><i class="fas fa-2x fa-copy"></i></a>&nbsp;
+                                                <a class="globals_table_info" title="Variable Info"><i class="fas fa-2x fa-info-circle"></i></a>&nbsp;
+                                                <a class="globals_table_remove" title="Delete Variable"><i class="fas fa-2x fa-trash"></i></a>
+                                                """,
+                    "events": {
+                        "click .globals_table_open": lambda e, value, row, d: globals_list_panel_obj.variable_open(row["variable_name"]),
+                        "click .globals_table_copy": lambda e, value, row, d: globals_list_panel_obj.variable_copy(row["variable_name"]),
+                        "click .globals_table_info": lambda e, value, row, d: globals_list_panel_obj.variable_info(row["variable_name"]),
+                        "click .globals_table_remove": lambda e, value, row, d: globals_list_panel_obj.variable_delete(row["variable_name"]),
+                    }
+                }
+            ],
             "new_variable_type_selectedState": "",
             "new_variable_type_selected": "",
             "new_variable_name_inputState": "",
             "new_variable_name": "",
-            "new_variable_type_select_options": []
+            "new_variable_type_select_options": [],
+            "variables_options":
+            {
+                "search": True,
+                "showColumns": False,
+                "showToggle": True,
+                "search": True,
+                "showSearchClearButton": True,
+                "showRefresh": False,
+                "cardView": True,
+                "toolbar": "#variables_toolbar"
+            }
         },
         "methods":
         {            
@@ -516,6 +597,7 @@ def add_globals_panel(core):
             "variable_copy": globals_list_panel_obj.variable_copy,
             "variable_info": globals_list_panel_obj.variable_info,
             "variable_delete": globals_list_panel_obj.variable_delete,
+            "variable_delete_selected": globals_list_panel_obj.variable_delete_selected,
             "refresh_globals_table": globals_list_panel_obj.refresh_globals_table,
             "new_variable": globals_list_panel_obj.new_variable,
             "reset_new_variable": globals_list_panel_obj.reset_new_variable,

@@ -133,7 +133,6 @@ class PyriDevicesPanel(PyriWebUIBrowserPanelBase):
         count = len(selections)
         for i in range(count):
             t = selections[i]
-            print(f"dev: {t['local_name']}")
             dev_names.append(t["local_name"])
 
         if len(dev_names) == 0:

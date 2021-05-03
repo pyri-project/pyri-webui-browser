@@ -469,7 +469,7 @@ class PyriJogPanel(PyriWebUIBrowserPanelBase):
         if e_state is not None:
             for e in e_state:
                 if e.type == "com.robotraconteur.robotics.robot.RobotState":
-                    joint_angles = np.rad2deg([j for j in e.state_data.joint_position])
+                    joint_angles = np.rad2deg([j for j in e.state_data.data.joint_position])
         if joint_angles is None:
             js.alert("Could not determine robot pose")
             return
