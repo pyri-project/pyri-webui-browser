@@ -96,6 +96,33 @@ class PyriProcedureListPanel(PyriWebUIBrowserPanelBase):
         if js.window.confirm(f"Delete procedure: {name}?"):
             self.core.create_task(self.do_procedure_delete(name))
 
+    async def do_procedure_selected(self,names):
+        try:
+            var_storage = self.device_manager.get_device_subscription("variable_storage").GetDefaultClient()
+            for name in names:
+                await var_storage.async_delete_variable("procedure", name, None)
+        except:
+            pass
+
+    def procedure_delete_selected(self, *args):
+        b_procedure_table = self.vue["$refs"].procedures_list
+        selections = b_procedure_table.getSelections()
+        names = []
+        count = len(selections)
+        for i in range(count):
+            t = selections[i]
+            names.append(t["procedure_name"])
+
+        if len(names) == 0:
+            return
+
+        dev_names_text = ", ".join(names)
+        ret = js.confirm(f"Delete procedures {dev_names_text}?")
+        if not ret:
+            return
+        
+        self.core.create_task(self.do_procedure_delete(names))
+
     async def do_refresh_procedure_table(self):
         try:
         
@@ -162,6 +189,9 @@ class PyriProcedureListPanel(PyriWebUIBrowserPanelBase):
 
     def new_blockly_procedure(self, *args):
         self.core.create_task(self.do_new_blockly_procedure())
+
+    def new_pyri_procedure(self, *args):
+        pass
 
 
 class PyriGlobalsListPanel(PyriWebUIBrowserPanelBase):
@@ -360,9 +390,61 @@ async def add_program_panel(panel_type: str, core: PyriWebUIBrowser, parent_elem
 
     program_panel = js.Vue.new(js.python_to_js({
         "el": "#procedures_table",
+        "components": {
+            "BootstrapTable": js.window.BootstrapTable
+        },
         "data":
         {
-            "procedures": []
+            "procedures": [],
+            "procedures_columns": [
+                {
+                    "field": "select",
+                    "checkbox": True
+                },
+                {
+                    "field": "procedure_name",
+                    "title": "Name"
+                },
+                {
+                    "field": "procedure_type",
+                    "title": "Type"
+                },
+                {
+                    "field": "docstring",
+                    "title": "Docstring"
+                },
+                {
+                    "field": "modified",
+                    "title": "Modified"
+                },
+                {
+                    "field": "actions",
+                    "title": "Actions",
+                    "formatter": lambda a,b,c,d: """<a class="procedure_list_play" title="Run Procedure"><i class="fas fa-2x fa-play"></i></a>&nbsp;
+                                                    <a class="procedure_list_open" title="Open Procedure"><i class="fas fa-2x fa-folder-open"></i></a>&nbsp;
+                                                    <a class="procedure_list_copy" title="Copy Procedure"><i class="fas fa-2x fa-copy"></i></a>&nbsp;
+                                                    <a class="procedure_list_info" title="Procedure Info"><i class="fas fa-2x fa-info-circle"></i></a>&nbsp;
+                                                    <a class="procedure_list_remove" title="Delete Procedure"><i class="fas fa-2x fa-trash"></i></a>""",
+                    "events": {
+                        "click .procedure_list_play": lambda e, value, row, d: procedure_list_panel_obj.procedure_run(row["procedure_name"]),
+                        "click .procedure_list_open": lambda e, value, row, d: procedure_list_panel_obj.procedure_open(row["procedure_name"]),
+                        "click .procedure_list_copy": lambda e, value, row, d: procedure_list_panel_obj.procedure_copy(row["procedure_name"]),
+                        "click .procedure_list_info": lambda e, value, row, d: procedure_list_panel_obj.procedure_info(row["procedure_name"]),
+                        "click .procedure_list_remove": lambda e, value, row, d: procedure_list_panel_obj.procedure_delete(row["procedure_name"])
+                    }
+                }
+            ],
+            "procedures_list_options":
+            {
+                "search": True,
+                "showColumns": False,
+                "showToggle": True,
+                "search": True,
+                "showSearchClearButton": True,
+                "showRefresh": False,
+                "cardView": True,
+                "toolbar": "#procedure_list_toolbar"
+            }
         },
         "methods":
         {
@@ -371,8 +453,10 @@ async def add_program_panel(panel_type: str, core: PyriWebUIBrowser, parent_elem
             "procedure_copy": procedure_list_panel_obj.procedure_copy,
             "procedure_info": procedure_list_panel_obj.procedure_info,
             "procedure_delete": procedure_list_panel_obj.procedure_delete,
+            "procedure_delete_selected": procedure_list_panel_obj.procedure_delete_selected,
             "refresh_procedure_table": procedure_list_panel_obj.refresh_procedure_table,
-            "new_blockly_procedure": procedure_list_panel_obj.new_blockly_procedure
+            "new_blockly_procedure": procedure_list_panel_obj.new_blockly_procedure,
+            "new_pyri_procedure": procedure_list_panel_obj.new_pyri_procedure
         }
     }))
 
