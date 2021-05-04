@@ -23,6 +23,14 @@ async def run_procedure(device_manager, name):
         
         js.window.alert(f"Run procedure {name} failed:\n\n{traceback.format_exc()}" )
 
+async def stop_all_procedure(device_manager):
+    try:
+        c = device_manager.get_device_subscription("sandbox").GetDefaultClient()
+        await c.async_stop_all(None)
+       
+    except Exception as e:
+        
+        js.window.alert(f"Stop all procedures failed:\n\n{traceback.format_exc()}" )
 
 def gen_block_uid():
 
@@ -192,6 +200,9 @@ class PyriProcedureListPanel(PyriWebUIBrowserPanelBase):
 
     def new_pyri_procedure(self, *args):
         pass
+
+    def do_stop_all(self, evt):
+        self.core.create_task(stop_all_procedure(self.device_manager))
 
 
 class PyriGlobalsListPanel(PyriWebUIBrowserPanelBase):
@@ -484,7 +495,8 @@ async def add_program_panel(panel_type: str, core: PyriWebUIBrowser, parent_elem
             "procedure_delete_selected": procedure_list_panel_obj.procedure_delete_selected,
             "refresh_procedure_table": procedure_list_panel_obj.refresh_procedure_table,
             "new_blockly_procedure": procedure_list_panel_obj.new_blockly_procedure,
-            "new_pyri_procedure": procedure_list_panel_obj.new_pyri_procedure
+            "new_pyri_procedure": procedure_list_panel_obj.new_pyri_procedure,
+            "stop_all": procedure_list_panel_obj.do_stop_all,
         }
     }))
 
@@ -644,7 +656,8 @@ class PyriBlocklyProgramPanel(PyriWebUIBrowserPanelBase):
             {
                 "save": self.do_save,
                 "run": self.do_run,
-                "iframe_load": self.iframe_loaded
+                "iframe_load": self.iframe_loaded,
+                "stop_all": self.do_stop_all,
             }
         }))
 
@@ -693,3 +706,8 @@ class PyriBlocklyProgramPanel(PyriWebUIBrowserPanelBase):
 
     def do_run(self, evt):
         self.core.create_task(run_procedure(self.device_manager,self.procedure_name))
+
+    def do_stop_all(self, evt):
+        self.core.create_task(stop_all_procedure(self.device_manager))
+
+    
