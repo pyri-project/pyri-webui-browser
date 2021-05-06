@@ -1,11 +1,13 @@
-<div id="globals_table" class="h-100 bg-white">
-    <caption>Global Variables</caption>
+<div id="globals_table" class="h-100 bg-white">    
+    <div class="pyri-table-panel h-100">
+        <caption>Global Variables</caption>
     <div id="variables_toolbar">
         <b-button @click="refresh_globals_table"><i class="fa fa-sync"></i> Refresh Table</b-button> 
         <b-button variant="danger" @click="variable_delete_selected"><i class="fa fa-trash"></i> Delete Selected</b-button> 
         <b-button variant="success" @click="new_variable"><i class="fa fa-plus-circle"></i> New Variable</b-button>
     </div>
     <bootstrap-table id="globals_list_table" ref="globals_list" :columns="variables_columns" :data="variables" :options="variables_options"></bootstrap-table>
+    </div>
     
     <b-modal ref="new_variable_modal" 
         id="new_variable_modal"

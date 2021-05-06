@@ -1,4 +1,4 @@
-<div id="procedures_table" class="h-100 bg-white">
+<div id="procedures_table" class="h-100 bg-white pyri-table-panel">
     <caption>Procedures</caption>
     <div id="procedure_list_toolbar"><b-button @click="refresh_procedure_table"><i class="fa fa-sync"></i> Refresh Table</b-button> <b-button variant="danger" @click="procedure_delete_selected"><i class="fa fa-trash"></i> Delete Selected</b-button> <b-button variant="success" @click="new_blockly_procedure"><i class="fa fa-plus-circle"></i> New Blockly</b-button> <b-button variant="success" @click="new_pyri_procedure"><i class="fa fa-plus-circle"></i> New PyRI</b-button> <b-button variant="danger" @click="stop_all"><i class="fa fa-stop"></i> Stop All</b-button></div>
     <bootstrap-table id="procedure_list_table" ref="procedures_list" :columns="procedures_columns" :data="procedures" :options="procedures_list_options"></bootstrap-table>
