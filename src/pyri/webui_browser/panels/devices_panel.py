@@ -324,7 +324,8 @@ async def add_devices_panel(panel_type: str, core: PyriWebUIBrowser, parent_elem
                 },
                 {
                     "title": "Action",
-                    "field": "actions",                    
+                    "field": "actions",
+                    "searchable": False,                  
                     "formatter": lambda a,b,c,d: """<a class="device_list_info" title="Device Info" @click=""><i class="fas fa-2x fa-info-circle"></i></a>&nbsp;
                                                     <a class="device_list_remove" title="Remove Device" @click="device_remove(local_name)"><i class="fas fa-2x fa-trash"></i></a>""",
                     "events":

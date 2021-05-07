@@ -459,6 +459,7 @@ async def add_program_panel(panel_type: str, core: PyriWebUIBrowser, parent_elem
                 {
                     "field": "actions",
                     "title": "Actions",
+                    "searchable": False,
                     "formatter": lambda a,b,c,d: """<a class="procedure_list_play" title="Run Procedure"><i class="fas fa-2x fa-play"></i></a>&nbsp;
                                                     <a class="procedure_list_open" title="Open Procedure"><i class="fas fa-2x fa-folder-open"></i></a>&nbsp;
                                                     <a class="procedure_list_copy" title="Copy Procedure"><i class="fas fa-2x fa-copy"></i></a>&nbsp;
@@ -576,6 +577,7 @@ def add_globals_panel(core):
                 {
                     "field": "actions",
                     "title": "Actions",
+                    "searchable": False,
                     "formatter": lambda a,b,c,d: """
                                                 <a class="globals_table_open" title="Open Variable"><i class="fas fa-2x fa-folder-open"></i></a>&nbsp;
                                                 <a class="globals_table_copy" title="Copy Variable"><i class="fas fa-2x fa-copy"></i></a>&nbsp;
