@@ -1,3 +1,4 @@
+import json
 from typing import List, Dict, Callable, Any
 from ..plugins.panel import PyriWebUIBrowserPanelBase
 from .. import PyriWebUIBrowser
@@ -7,6 +8,7 @@ import traceback
 from RobotRaconteur.Client import *
 import random
 import re
+import io
 
 async def run_procedure(device_manager, name):
     try:
@@ -777,7 +779,10 @@ class PyriEditorProgramPanel(PyriWebUIBrowserPanelBase):
             "el": res,
             "data":
             {
-                "procedure_name": procedure_name
+                "procedure_name": procedure_name,
+                "insert_function_selected": None,
+                "insert_function_options": [],
+                "insert_function_selected_doc": ""
             },
             "methods":
             {
@@ -795,7 +800,9 @@ class PyriEditorProgramPanel(PyriWebUIBrowserPanelBase):
                 "editor_replace": self.editor_replace,
                 "editor_undo": self.editor_undo,
                 "editor_redo": self.editor_redo,
-                "insert_function": self.insert_function
+                "insert_function": self.insert_function,
+                "insert_function_selected_changed": self.insert_function_selected_changed,
+                "insert_function_ok": self.insert_function_ok
             }
         }))
 
@@ -883,7 +890,62 @@ class PyriEditorProgramPanel(PyriWebUIBrowserPanelBase):
     def editor_redo(self,evt):
         self._get_iframe().redo()
 
+    async def do_insert_function(self):
+        try:
+            res = await js.fetch('/sandbox_functions/all_functions.json', {"cache": "no-store"})
+            res_io = io.TextIOWrapper(io.BytesIO(await res.arrayBuffer()),encoding="utf-8")
+            res_str = res_io.read()
+
+            res_json = json.loads(res_str)
+
+            all_functions_list = res_json["all_functions"]
+            all_functions = {}
+            for v in all_functions_list:
+                all_functions[v["name"]] = v
+
+            self.all_functions = all_functions
+
+            opts = []
+            for v in self.all_functions.values():
+                opts.append({
+                    "value": v["name"],
+                    "text": v["full_signature"]
+                })
+
+            self.vue["$data"].insert_function_options = js.python_to_js(opts)
+
+            self.vue["$bvModal"].show("insert-function-modal")
+        except:
+            traceback.print_exc()
+
     def insert_function(self,evt):
-        pass
+        self.core.create_task(self.do_insert_function())
+
+    def insert_function_selected_changed(self,value):
+        if value is None:
+            return
+
+        try:
+            v = self.all_functions[value]
+            self.vue["$data"].insert_function_selected_doc = v["docstring"] or ""
+        except:
+            traceback.print_exc()
+
+    def insert_function_ok(self,evt):
+        try:
+            value = self.vue["$data"].insert_function_selected
+            if value is None:
+                return
+            v = self.all_functions[value]
+
+            iframe = self._get_iframe()
+            iframe.insertText(v["full_signature"])
+
+        except:
+            traceback.print_exc()
+
+    def insert_function_hidden(self,*args):
+        self.vue["$data"].insert_function_selected_doc = ""
+        self.vue["$data"].insert_function_selected = None
 
     
