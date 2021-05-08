@@ -10,7 +10,7 @@ import random
 import re
 import io
 
-async def run_procedure(device_manager, name):
+async def run_procedure(device_manager, name, vue):
     try:
         c = device_manager.get_device_subscription("sandbox").GetDefaultClient()
         gen = await c.async_execute_procedure(name, [], None)
@@ -19,11 +19,32 @@ async def run_procedure(device_manager, name):
         await gen.AsyncClose(None)
 
         res_printed = '\n'.join(res.printed)
-        js.window.alert(f"Run procedure {name} complete:\n\n{res_printed}")
+        if vue is None:
+            js.window.alert(f"Run procedure {name} complete:\n\n{res_printed}")
+        else:
+            vue["$bvToast"].toast(f"Run procedure {name} complete:\n\n{res_printed}",
+                js.python_to_js({
+                    "title": "Run Procedure Complete",
+                    "autoHideDelay": 5000,
+                    "appendToToast": True,
+                    "variant": "success",
+                    "toaster": "b-toaster-bottom-center"
+                })
+            )
         
     except Exception as e:
-        
-        js.window.alert(f"Run procedure {name} failed:\n\n{traceback.format_exc()}" )
+        if vue is None:
+            js.window.alert(f"Run procedure {name} failed:\n\n{traceback.format_exc()}" )
+        else:
+            vue["$bvToast"].toast(f"Run procedure {name} failed:\n\n{traceback.format_exc()}",
+                js.python_to_js({
+                    "title": "Run Procedure Failed",
+                    "autoHideDelay": 5000,
+                    "appendToToast": True,
+                    "variant": "danger",
+                    "toaster": "b-toaster-bottom-center"
+                })
+            )
 
 async def stop_all_procedure(device_manager):
     try:
@@ -66,7 +87,7 @@ class PyriProcedureListPanel(PyriWebUIBrowserPanelBase):
         self.vue = vue    
 
     def procedure_run(self, name):
-        self.core.create_task(run_procedure(self.device_manager,name))
+        self.core.create_task(run_procedure(self.device_manager,name,self.vue))
 
     async def do_procedure_open(self,name):
         try:
@@ -748,7 +769,7 @@ class PyriBlocklyProgramPanel(PyriWebUIBrowserPanelBase):
         
 
     def do_run(self, evt):
-        self.core.create_task(run_procedure(self.device_manager,self.procedure_name))
+        self.core.create_task(run_procedure(self.device_manager,self.procedure_name,self.vue))
 
     def do_stop_all(self, evt):
         self.core.create_task(stop_all_procedure(self.device_manager))
@@ -861,7 +882,7 @@ class PyriEditorProgramPanel(PyriWebUIBrowserPanelBase):
         
 
     def do_run(self, evt):
-        self.core.create_task(run_procedure(self.device_manager,self.procedure_name))
+        self.core.create_task(run_procedure(self.device_manager,self.procedure_name,self.vue))
 
     def do_stop_all(self, evt):
         self.core.create_task(stop_all_procedure(self.device_manager))
