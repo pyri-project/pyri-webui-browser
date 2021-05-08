@@ -607,7 +607,6 @@ class PyriJogPanel(PyriWebUIBrowserPanelBase):
 
     def joint_standby_disp(self, j):        
         try:
-            print(f"joint_standby: {self.vue['$data'].joint_standby}")
             p = self.vue["$data"].joint_standby[j]            
             return f"{p:.2f}"
         except:

@@ -1,0 +1,17 @@
+<div id="procedure_pyri_component" style="display: flex; flex-direction: column;" class="h-100 w-100">
+    <div>
+        <b-button @click="save"><i class="fa fa-save"></i> Save</b-button>
+        <b-button variant="success" @click="run"><i class="fa fa-play"></i> Run</b-button>
+        <b-button variant="danger" @click="stop_all"><i class="fa fa-stop"></i> Stop All</b-button>
+        <br>
+        <b-button @click="cursor_left" @mousedown.prevent=""><i class="fas fa-arrow-left"></i></b-button> <b-button @click="cursor_right" @mousedown.prevent=""><i class="fas fa-arrow-right"></i></b-button>
+        <b-button @click="cursor_up" @mousedown.prevent=""><i class="fas fa-arrow-up"></i></b-button> <b-button @click="cursor_down" @mousedown.prevent=""><i class="fas fa-arrow-down"></i></b-button>
+        <b-button @click="cursor_outdent" @mousedown.prevent=""><i class="fas fa-long-arrow-alt-left"></i> Outdent</b-button> <b-button @click="cursor_indent" @mousedown.prevent=""><i class="fas fa-long-arrow-alt-right"></i> Indent</b-button>
+        <b-button @click="editor_find" @mousedown.prevent=""><i class="fas fa-search"></i> Find</b-button> <b-button @click="editor_replace" @mousedown.prevent=""><i class="fas fa-exchange-alt"></i> Replace</b-button>
+        <b-button @click="editor_undo" @mousedown.prevent=""><i class="fas fa-undo"></i></b-button> <b-button @click="editor_redo" @mousedown.prevent=""><i class="fas fa-redo"></i></b-button>
+        <b-button @click="insert_function" @mousedown.prevent="">Insert Function</b-button>
+        
+        
+    </div>
+    <iframe src="pyri_editor.html" id="procedure_pyri_iframe" @load="iframe_load" style="flex: 1; width: 100%"></iframe>
+</div>

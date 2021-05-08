@@ -66,8 +66,21 @@ class PyriProcedureListPanel(PyriWebUIBrowserPanelBase):
     def procedure_run(self, name):
         self.core.create_task(run_procedure(self.device_manager,name))
 
+    async def do_procedure_open(self,name):
+        try:
+            var_storage = self.device_manager.get_device_subscription("variable_storage").GetDefaultClient()
+            tags = await var_storage.async_getf_variable_tags("procedure",name,None)
+            if "pyri" in tags:
+                p = PyriEditorProgramPanel(name,self.core,self.device_manager)
+            elif "blockly" in tags:
+                p = PyriBlocklyProgramPanel(name,self.core,self.device_manager)
+            else:
+                raise RR.InvalidArgumentException("Procedure is not a Blockly or PyRI procedure!")
+        except:
+            js.alert(f"Open procedure failed:\n\n{traceback.format_exc()}")
+
     def procedure_open(self, name):
-        p = PyriBlocklyProgramPanel(name,self.core,self.device_manager)
+        self.core.create_task(self.do_procedure_open(name))
 
 
     async def do_procedure_copy(self,name,copy_name):
@@ -198,8 +211,27 @@ class PyriProcedureListPanel(PyriWebUIBrowserPanelBase):
     def new_blockly_procedure(self, *args):
         self.core.create_task(self.do_new_blockly_procedure())
 
+    async def do_new_pyri_procedure(self):
+        try:
+            procedure_name = js.prompt("New procedure name")
+            pyri_src = f"def {procedure_name}(*args):\n    pass"
+            variable_manager = self.device_manager.get_device_subscription("variable_storage").GetDefaultClient()
+
+            var_consts = RRN.GetConstants('tech.pyri.variable_storage', variable_manager)
+            variable_persistence = var_consts["VariablePersistence"]
+            variable_protection_level = var_consts["VariableProtectionLevel"]
+
+            await variable_manager.async_add_variable2("procedure", procedure_name ,"string", \
+            RR.VarValue(pyri_src,"string"), ["pyri"], {}, variable_persistence["const"], None, variable_protection_level["read_write"], \
+                [], "User defined procedure", False, None)
+
+            p = PyriEditorProgramPanel(procedure_name,self.core,self.device_manager)
+
+        except:
+            traceback.print_exc()
+
     def new_pyri_procedure(self, *args):
-        pass
+        self.core.create_task(self.do_new_pyri_procedure())
 
     def do_stop_all(self, evt):
         self.core.create_task(stop_all_procedure(self.device_manager))
@@ -510,6 +542,13 @@ async def add_program_panel(panel_type: str, core: PyriWebUIBrowser, parent_elem
 
     core.layout.register_component(f"procedure_blockly",register_blockly_panel)
 
+    pyri_panel_html = importlib_resources.read_text(__package__,"procedure_pyri_panel.html")
+
+    def register_pyri_panel(container, state):
+        container.getElement().html(pyri_panel_html)
+
+    core.layout.register_component(f"procedure_pyri",register_pyri_panel)
+
     add_globals_panel(core)
 
     p = core.layout.layout.root.getItemsById("program")[0].getItemsById("procedure_list")
@@ -711,5 +750,140 @@ class PyriBlocklyProgramPanel(PyriWebUIBrowserPanelBase):
 
     def do_stop_all(self, evt):
         self.core.create_task(stop_all_procedure(self.device_manager))
+
+
+class PyriEditorProgramPanel(PyriWebUIBrowserPanelBase):
+    def __init__(self, procedure_name: str, core: PyriWebUIBrowser, device_manager):
+        self.vue = None
+        self.core = core
+        self.device_manager = device_manager
+        self.procedure_name = procedure_name
+        
+        pyri_panel_config = {
+            "type": "component",
+            "componentName": f"procedure_pyri",
+            "componentState": {
+                "procedure_name": procedure_name
+            },
+            "title": procedure_name,
+            "id": f"procedure_pyri_{procedure_name}",
+            "isClosable": True
+        }
+       
+        core.layout.layout.root.getItemsById("program")[0].addChild(js.python_to_js(pyri_panel_config))
+        res = core.layout.layout.root.getItemsById(f"procedure_pyri_{procedure_name}")[0].element.find("#procedure_pyri_component")[0]
+                
+        procedure_panel = js.Vue.new(js.python_to_js({
+            "el": res,
+            "data":
+            {
+                "procedure_name": procedure_name
+            },
+            "methods":
+            {
+                "save": self.do_save,
+                "run": self.do_run,
+                "iframe_load": self.iframe_loaded,
+                "stop_all": self.do_stop_all,
+                "cursor_left": self.cursor_left,
+                "cursor_right": self.cursor_right,
+                "cursor_up": self.cursor_up,
+                "cursor_down": self.cursor_down,
+                "cursor_outdent": self.cursor_outdent,
+                "cursor_indent": self.cursor_indent,
+                "editor_find": self.editor_find,
+                "editor_replace": self.editor_replace,
+                "editor_undo": self.editor_undo,
+                "editor_redo": self.editor_redo,
+                "insert_function": self.insert_function
+            }
+        }))
+
+        self.vue = procedure_panel    
+
+    def iframe_loaded(self, evt):
+
+        self.core.create_task(self.do_iframe_loaded())
+
+    async def do_iframe_loaded(self):
+        try:
+            
+            variable_manager = self.device_manager.get_device_subscription("variable_storage").GetDefaultClient()
+
+            procedure_src = await variable_manager.async_getf_variable_value("procedure",self.procedure_name,None)
+
+            iframe = self.core.layout.layout.root.getItemsById(f"procedure_pyri_{self.procedure_name}")[0]\
+                .element.find("#procedure_pyri_iframe")[0].contentWindow
+
+            delay_count = 0
+            while not iframe.editorReady():
+                delay_count+=1
+                assert delay_count < 100
+                await RRN.AsyncSleep(0.1,None)
+
+            iframe.setValue(procedure_src.data)
+        except:
+            traceback.print_exc()
+
+    def do_save(self, evt):
+        iframe = self.core.layout.layout.root.getItemsById(f"procedure_pyri_{self.procedure_name}")[0]\
+                .element.find("#procedure_pyri_iframe")[0].contentWindow
+
+        pyri_src = iframe.getValue()
+
+        async def s():
+            try:
+                variable_manager = self.device_manager.get_device_subscription("variable_storage").GetDefaultClient()
+                await variable_manager.async_setf_variable_value("procedure",self.procedure_name,RR.VarValue(pyri_src,"string"),None)
+            except:
+                traceback.print_exc()
+        
+        self.core.create_task(s())
+
+        
+
+    def do_run(self, evt):
+        self.core.create_task(run_procedure(self.device_manager,self.procedure_name))
+
+    def do_stop_all(self, evt):
+        self.core.create_task(stop_all_procedure(self.device_manager))
+
+    def _get_iframe(self):
+        iframe = self.core.layout.layout.root.getItemsById(f"procedure_pyri_{self.procedure_name}")[0]\
+                .element.find("#procedure_pyri_iframe")[0].contentWindow
+        return iframe
+
+    def cursor_left(self,evt):
+        self._get_iframe().cursorLeft()
+
+    def cursor_right(self,evt):
+        self._get_iframe().cursorRight()
+
+    def cursor_up(self,evt):
+        self._get_iframe().cursorUp()
+
+    def cursor_down(self,evt):
+        self._get_iframe().cursorDown()
+
+    def cursor_outdent(self,evt):
+        self._get_iframe().outdentLines()
+
+    def cursor_indent(self,evt):
+        self._get_iframe().indentLines()
+
+    def editor_find(self,evt):
+        self._get_iframe().find()
+
+    def editor_replace(self,evt):
+        self._get_iframe().replace()
+
+    def editor_undo(self,evt):
+        self._get_iframe().undo()
+
+    def editor_redo(self,evt):
+        self._get_iframe().redo()
+
+    def insert_function(self,evt):
+        pass
 
     
