@@ -18,7 +18,10 @@ async def run_procedure(device_manager, name, vue):
         res = await gen.AsyncNext(None,None)
         await gen.AsyncClose(None)
 
-        res_printed = '\n'.join(res.printed)
+        if len(res.printed) > 12:
+            res_printed = '\n'.join(res.printed[0:12] + ["..."])
+        else:
+            res_printed = '\n'.join(res.printed)
         if vue is None:
             js.window.alert(f"Run procedure {name} complete:\n\n{res_printed}")
         else:
@@ -33,10 +36,15 @@ async def run_procedure(device_manager, name, vue):
             )
         
     except Exception as e:
+
+        msg = f"Run procedure {name} failed:\n\n{traceback.format_exc()}"
+        msg1 = msg.splitlines()
+        if len(msg1) > 14:
+            msg = "\n".join(msg1[0:14] + ["..."])
         if vue is None:
-            js.window.alert(f"Run procedure {name} failed:\n\n{traceback.format_exc()}" )
+            js.window.alert(msg )
         else:
-            vue["$bvToast"].toast(f"Run procedure {name} failed:\n\n{traceback.format_exc()}",
+            vue["$bvToast"].toast(msg,
                 js.python_to_js({
                     "title": "Run Procedure Failed",
                     "autoHideDelay": 5000,
@@ -237,7 +245,7 @@ class PyriProcedureListPanel(PyriWebUIBrowserPanelBase):
     async def do_new_pyri_procedure(self):
         try:
             procedure_name = js.prompt("New procedure name")
-            pyri_src = f"def {procedure_name}(*args):\n    pass"
+            pyri_src = f"def {procedure_name}():\n    pass"
             variable_manager = self.device_manager.get_device_subscription("variable_storage").GetDefaultClient()
 
             var_consts = RRN.GetConstants('tech.pyri.variable_storage', variable_manager)
@@ -440,6 +448,54 @@ class PyriGlobalsListPanel(PyriWebUIBrowserPanelBase):
         except:
             traceback.print_exc()
 
+class PyriOutputPanel:
+    def __init__(self, core, device_manager):
+        self.core = core
+        self.device_manager = device_manager
+
+    async def run(self):
+        try:
+            while True:
+                try:
+                    sandbox = self.device_manager.get_device_subscription("sandbox").GetDefaultClient()
+                    output_type_consts = RRN.GetConstants("tech.pyri.sandbox",sandbox)["ProcedureOutputTypeCode"]
+                except Exception:
+                    traceback.print_exc()
+                    await RRN.AsyncSleep(2, None)
+                    continue
+                try:
+                    gen = await sandbox.async_getf_output(None)
+                    try:
+                        while True:
+                            output_list = await gen.AsyncNext(None,None)
+                            output_el = js.document.getElementById("procedure_output_inner_div")
+                            anchor_el = js.document.getElementById("procedure_output_div_anchor")
+                            for l in output_list.output_list:
+                                span = js.document.createElement('div')
+                                span.innerText = l.output
+                                span.style = "white-space: pre-line"
+                                css_classes = ["text-monospace", "d-block"]
+                                if l.output_type == output_type_consts["status"]:
+                                    css_classes.append("text-success")
+                                elif l.output_type == output_type_consts["info"]:
+                                    css_classes.append("text-info")
+                                elif l.output_type == output_type_consts["error"]:
+                                    css_classes.append("text-danger")
+                                elif l.output_type == output_type_consts["debug"]:
+                                    css_classes.append("text-muted")
+                                span.className = " ".join(css_classes)
+                                # https://blog.eqrion.net/pin-to-bottom/                       
+                                output_el.insertBefore(span,anchor_el)
+                    except RR.StopIterationException:
+                            continue
+                except Exception:
+                    traceback.print_exc()
+                    await RRN.AsyncSleep(0.5, None)
+                    continue
+                
+        except:
+            traceback.print_exc()
+
 async def add_program_panel(panel_type: str, core: PyriWebUIBrowser, parent_element: Any):
 
     assert panel_type == "program"
@@ -574,6 +630,8 @@ async def add_program_panel(panel_type: str, core: PyriWebUIBrowser, parent_elem
 
     add_globals_panel(core)
 
+    add_output_panel(core)
+
     p = core.layout.layout.root.getItemsById("program")[0].getItemsById("procedure_list")
     p[0].parent.setActiveContentItem(p[0])
     
@@ -688,6 +746,28 @@ def add_globals_panel(core):
     }))
 
     globals_list_panel_obj.init_vue(globals_panel)
+
+def add_output_panel(core):
+    output_panel_html = importlib_resources.read_text(__package__,"output_panel.html")
+
+    output_list_panel_config = {
+        "type": "component",
+        "componentName": "procedure_output",
+        "componentState": {},
+        "title": "Output",
+        "id": "procedure_output_panel",
+        "isClosable": False
+    }
+
+    def register_output_panel(container, state):
+        container.getElement().html(output_panel_html)
+
+    core.layout.register_component("procedure_output",register_output_panel)
+
+    core.layout.layout.root.getItemsById("program")[0].addChild(js.python_to_js(output_list_panel_config))
+
+    output_panel_obj = PyriOutputPanel(core, core.device_manager)
+    core.create_task(output_panel_obj.run())
 
 class PyriBlocklyProgramPanel(PyriWebUIBrowserPanelBase):
     def __init__(self, procedure_name: str, core: PyriWebUIBrowser, device_manager):
@@ -827,6 +907,8 @@ class PyriEditorProgramPanel(PyriWebUIBrowserPanelBase):
                 "editor_delete_left": self.editor_delete_left,
                 "editor_delete_right": self.editor_delete_right,
                 "editor_delete_line": self.editor_delete_line,
+                "editor_comment_line": self.editor_comment_line,
+                "editor_remove_comment_line": self.editor_remove_comment_line,
                 "editor_find": self.editor_find,
                 "editor_replace": self.editor_replace,
                 "editor_gotoline": self.editor_gotoline,
@@ -954,6 +1036,12 @@ class PyriEditorProgramPanel(PyriWebUIBrowserPanelBase):
 
     def editor_redo(self,evt):
         self._get_iframe().redo()
+
+    def editor_comment_line(self,evt):
+        self._get_iframe().commentLine()
+
+    def editor_remove_comment_line(self,evt):
+        self._get_iframe().removeCommentLine()
 
     async def do_insert_function(self):
         try:
