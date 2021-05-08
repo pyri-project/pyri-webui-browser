@@ -794,10 +794,21 @@ class PyriEditorProgramPanel(PyriWebUIBrowserPanelBase):
                 "cursor_right": self.cursor_right,
                 "cursor_up": self.cursor_up,
                 "cursor_down": self.cursor_down,
+                "cursor_home": self.cursor_home,
+                "cursor_end": self.cursor_end,
                 "cursor_outdent": self.cursor_outdent,
                 "cursor_indent": self.cursor_indent,
+                "move_line_down": self.move_line_down,
+                "move_line_up": self.move_line_up,
+                "editor_newline": self.editor_newline,
+                "editor_select_more": self.editor_select_more,
+                "editor_select_less": self.editor_select_less,
+                "editor_delete_left": self.editor_delete_left,
+                "editor_delete_right": self.editor_delete_right,
+                "editor_delete_line": self.editor_delete_line,
                 "editor_find": self.editor_find,
                 "editor_replace": self.editor_replace,
+                "editor_gotoline": self.editor_gotoline,
                 "editor_undo": self.editor_undo,
                 "editor_redo": self.editor_redo,
                 "insert_function": self.insert_function,
@@ -872,17 +883,50 @@ class PyriEditorProgramPanel(PyriWebUIBrowserPanelBase):
     def cursor_down(self,evt):
         self._get_iframe().cursorDown()
 
+    def cursor_home(self,evt):
+        self._get_iframe().home()
+
+    def cursor_end(self,evt):
+        self._get_iframe().end()
+
     def cursor_outdent(self,evt):
         self._get_iframe().outdentLines()
 
     def cursor_indent(self,evt):
         self._get_iframe().indentLines()
 
+    def move_line_up(self,evt):
+        self._get_iframe().moveLineUp()
+
+    def move_line_down(self,evt):
+        self._get_iframe().moveLineDown()
+
+    def editor_newline(self,evt):
+        self._get_iframe().newline()
+
+    def editor_select_more(self,evt):
+        self._get_iframe().selectMore()
+    
+    def editor_select_less(self,evt):
+        self._get_iframe().selectLess()
+
+    def editor_delete_left(self,evt):
+        self._get_iframe().deleteLeft()
+
+    def editor_delete_right(self,evt):
+        self._get_iframe().deleteRight()
+
+    def editor_delete_line(self,evt):
+        self._get_iframe().deleteLine()
+
     def editor_find(self,evt):
         self._get_iframe().find()
 
     def editor_replace(self,evt):
         self._get_iframe().replace()
+    
+    def editor_gotoline(self,evt):
+        self._get_iframe().gotoline()
 
     def editor_undo(self,evt):
         self._get_iframe().undo()

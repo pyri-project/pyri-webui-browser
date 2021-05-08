@@ -1,13 +1,20 @@
 <div id="procedure_pyri_component" style="display: flex; flex-direction: column;" class="h-100 w-100">
-    <div>
+    <div style="line-height: 1.1em;">
         <b-button @click="save"><i class="fa fa-save"></i> Save</b-button>
         <b-button variant="success" @click="run"><i class="fa fa-play"></i> Run</b-button>
         <b-button variant="danger" @click="stop_all"><i class="fa fa-stop"></i> Stop All</b-button>
         <br>
         <b-button @click="cursor_left" @mousedown.prevent=""><i class="fas fa-arrow-left"></i></b-button> <b-button @click="cursor_right" @mousedown.prevent=""><i class="fas fa-arrow-right"></i></b-button>
         <b-button @click="cursor_up" @mousedown.prevent=""><i class="fas fa-arrow-up"></i></b-button> <b-button @click="cursor_down" @mousedown.prevent=""><i class="fas fa-arrow-down"></i></b-button>
-        <b-button @click="cursor_outdent" @mousedown.prevent=""><i class="fas fa-long-arrow-alt-left"></i> Outdent</b-button> <b-button @click="cursor_indent" @mousedown.prevent=""><i class="fas fa-long-arrow-alt-right"></i> Indent</b-button>
+        <b-button @click="cursor_home" @mousedown.prevent="">Home</b-button> <b-button @click="cursor_end" @mousedown.prevent="">End</b-button>
+        <b-button @click="move_line_up" @mousedown.prevent=""><i class="fas fa-long-arrow-alt-up"></i> Line</b-button> <b-button @click="move_line_down" @mousedown.prevent=""><i class="fas fa-long-arrow-alt-down"></i> Line</b-button>
+        <b-button @click="editor_newline" @mousedown.prevent="">Newline</b-button> 
+        <b-button @click="editor_select_more" @mousedown.prevent="">Select More</b-button> <b-button @click="editor_select_less" @mousedown.prevent="">Select Less</b-button>
+        <b-button @click="editor_delete_left" @mousedown.prevent=""><i class="fas fa-backspace"></i></b-button> <b-button @click="editor_delete_right" @mousedown.prevent=""><i class="fas fa-backspace" style="transform: scaleX(-1);"></i></b-button> 
+        <b-button @click="editor_delete_line" @mousedown.prevent=""><i class="fas fa-times-circle"></i> Line</b-button>
+        <br>
         <b-button @click="editor_find" @mousedown.prevent=""><i class="fas fa-search"></i> Find</b-button> <b-button @click="editor_replace" @mousedown.prevent=""><i class="fas fa-exchange-alt"></i> Replace</b-button>
+        <b-button @click="editor_gotoline" @mousedown.prevent=""><i class="fas fa-search"></i> Line</b-button> 
         <b-button @click="editor_undo" @mousedown.prevent=""><i class="fas fa-undo"></i></b-button> <b-button @click="editor_redo" @mousedown.prevent=""><i class="fas fa-redo"></i></b-button>
         <b-button @click="insert_function" @mousedown.prevent="">Insert Function</b-button>
         
