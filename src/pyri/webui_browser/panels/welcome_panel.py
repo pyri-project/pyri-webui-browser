@@ -28,6 +28,7 @@ class PyriWelcomePanel(PyriWebUIBrowserPanelBase):
 
     
     async def run(self):
+        return
         last_seqno = -1
         last_devices = set()
         while True:
