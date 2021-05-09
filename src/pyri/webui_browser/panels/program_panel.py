@@ -9,6 +9,7 @@ from RobotRaconteur.Client import *
 import random
 import re
 import io
+from RobotRaconteurCompanion.Util.UuidUtil import UuidUtil
 
 async def run_procedure(device_manager, name, vue):
     try:
@@ -529,6 +530,16 @@ async def add_program_panel(panel_type: str, core: PyriWebUIBrowser, parent_elem
 
     core.layout.add_panel_menu_item("program", "Program")
 
+
+    program_main_panel_html = importlib_resources.read_text(__package__,"program_main_panel.html")
+
+    def register_program_main_panel(container, state):
+        container.getElement().html(program_main_panel_html)
+
+    core.layout.register_component(f"program_main",register_program_main_panel)
+
+    program_main_panel=PyriProgramMainPanel(core,core.device_manager)
+
     procedure_list_panel_html = importlib_resources.read_text(__package__,"program_panel.html")
 
     procedure_list_panel_config = {
@@ -645,7 +656,7 @@ async def add_program_panel(panel_type: str, core: PyriWebUIBrowser, parent_elem
 
     add_output_panel(core)
 
-    p = core.layout.layout.root.getItemsById("program")[0].getItemsById("procedure_list")
+    p = core.layout.layout.root.getItemsById("program")[0].getItemsById("program_main_main")
     p[0].parent.setActiveContentItem(p[0])
     
     return procedure_list_panel_obj
@@ -1114,4 +1125,148 @@ class PyriEditorProgramPanel(PyriWebUIBrowserPanelBase):
         self.vue["$data"].insert_function_selected_doc = ""
         self.vue["$data"].insert_function_selected = None
 
-    
+class PyriProgramMainPanel(PyriWebUIBrowserPanelBase):
+    def __init__(self, core: PyriWebUIBrowser, device_manager):
+
+        self.vue = None
+        self.core = core
+        self.device_manager = device_manager
+        self.program_name = "main"
+        self.current_program = None
+        
+        main_panel_config = {
+            "type": "component",
+            "componentName": f"program_main",
+            "componentState": {
+                "program_name": "main"
+            },
+            "title": "Main",
+            "id": f"program_main_main",
+            "isClosable": False
+        }
+
+        core.layout.layout.root.getItemsById("program")[0].addChild(js.python_to_js(main_panel_config))
+        res = core.layout.layout.root.getItemsById(f"program_main_main")[0].element.find("#program_main_panel")[0]
+
+        program_main_panel = js.Vue.new(js.python_to_js({
+            "el": res,
+            "data":
+            {
+                "program_name": "main",
+                "program_steps": []
+            },
+            "methods":
+            {
+                "save": self.save,
+                "reload": self.reload,
+                "run": self.run,
+                "step_one": self.step_one,
+                "pause": self.pause,
+                "stop_all": self.stop_all,
+                "add_step": self.add_step,
+                "move_cursor_to_step": self.move_cursor_to_step,
+                "move_step_up": self.move_step_up,
+                "move_step_down": self.move_step_down,
+                "delete_step": self.delete_step,
+                "configure_step": self.configure_step
+            }
+        }))
+
+        self.vue = program_main_panel
+
+        self.core.create_task(self.do_reload())
+         
+    def _get_client(self):
+        return self.device_manager.get_device_subscription("program_master").GetDefaultClient()
+
+    def save(self, evt):
+        pass
+
+    def _op_code_to_class(self,opcode):
+        if opcode == 1:
+            return "program_main_step_op_stop"
+        elif opcode == 2:
+            return "program_main_step_op_next"
+        elif opcode == 3:
+            return "program_main_step_op_jump"
+        elif opcode == 4:
+            return "program_main_step_op_error"
+        
+        return "program_main_step_op_error"
+
+    def _program_to_plain(self,program):
+        uuid_util = UuidUtil(client_obj=self._get_client())
+        ret = []
+        for s1 in program.steps:
+            uuid_str = uuid_util.UuidToString(s1.step_id)
+            s2 = dict()
+            s2["name"] = s1.step_name
+            s2["procedure"] = s1.procedure_name
+            s2["procedure_args"] = ", ".join(s1.procedure_args)
+            s2["card_id"] = f"program-main-step_{uuid_str}"
+            next_steps = []
+            for n in s1.next:
+                jump_target = ""
+                if n.op_code == 3:
+                    jump_target_uuid = uuid_util.UuidToPyUuid(n.jump_target)
+                    for s3 in program.steps:
+                        if uuid_util.UuidToPyUuid(s3.step_id) == jump_target_uuid:
+                            jump_target = s3.step_name
+                            break
+
+                next_steps.append(
+                    {
+                        "result": n.result,
+                        "op_code_class": self._op_code_to_class(n.op_code),
+                        "jump_target": jump_target
+                    }
+                )
+                s2["next_steps"] = next_steps
+
+            ret.append(s2)
+        return ret
+
+    async def do_reload(self, show_error = False):
+        try:
+            var_storage = self.device_manager.get_device_subscription("variable_storage").GetDefaultClient()
+            program = await var_storage.async_getf_variable_value("program",self.program_name,None)
+            self.vue["$data"].program_steps = js.python_to_js(self._program_to_plain(program.data))
+            self.current_program = program.data
+        except:
+            if show_error:
+                js.alert(f"Program main load failed:\n\n{traceback.format_exc()}")
+            else:
+                traceback.print_exc()
+
+    def reload(self, evt):
+        self.core.create_task(self.do_reload(True))
+
+    def run(self, evt):
+        pass
+
+    def step_one(self, evt):
+        pass
+
+    def pause(self, evt):
+        pass
+
+    def stop_all(self, evt):
+        do_stop_all(self.core,self.device_manager)
+
+    def add_step(self, evt):
+        pass
+
+    def move_cursor_to_step(self, index):
+        pass
+
+    def move_step_up(self, index):
+        pass
+
+    def move_step_down(self, index):
+        pass
+
+    def delete_step(self, index):
+        pass
+
+    def configure_step(self, index):
+        pass

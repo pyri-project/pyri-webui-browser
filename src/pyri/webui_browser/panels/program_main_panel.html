@@ -1,0 +1,41 @@
+<div id="program_main_panel" style="display: flex; flex-direction: column;" class="h-100 w-100">
+    <div>
+        <b-button @click="save"><i class="fa fa-save"></i> Save</b-button>
+        <b-button @click="reload"><i class="fa fa-sync"></i> Reload</b-button>
+        <b-button variant="success" @click="run"><i class="fa fa-play"></i> Run</b-button>
+        <b-button variant="info" @click="step_one"><i class="fas fa-level-down-alt"></i> Step One</b-button>
+        <b-button @click="pause"><i class="fas fa-pause"></i> Pause</b-button>
+        <b-button variant="danger" @click="stop_all"><i class="fa fa-stop"></i> Stop All</b-button>
+        <b-button variant="success" @click="add_step"><i class="fa fa-plus-circle"></i> Add Step</b-button>
+    </div>
+    <div style="flex: 1;" class="overflow-auto">
+        <div style="max-width:500px;padding:20px;margin:auto">
+            <b-card bg-variant="success" style="border-radius:10px;margin:10px">
+                <h3 class="text-center">Start</h3>
+            </b-card>
+            <div id="program_master_steps">
+                <b-card v-for="(s,index) in program_steps" :key="s.card_id" :id="s.card_id" :header="s.name" style="border-radius:10px;margin:10px">
+                    <table class="table-borderless program_main_steps_table">
+                    <tr><td class="font-weight-bold">Procedure:</td><td>{{ s.procedure }}</td></tr>
+                    <tr><td class="font-weight-bold">Procedure args:</td><td>{{ s.procedure_args }}</td></tr>
+                    <tr><td class="font-weight-bold">Next Steps:</td><td></td></tr>
+                    <tr><td></td><td>
+                        <table class="table-borderless">
+                            <tr v-for="s1 in s.next_steps">
+                                <td>{{ s1.result }} </td><td><span :class="s1.op_code_class"></span><td>{{ s1.jump_target }}</td>
+                            </tr>
+                        </table>
+                    </td></tr>
+                    </table>
+                    <div class="text-primary text-right">
+                        <a class="move_cursor_to_step" title="Move Cursor To Step" @click="move_cursor_to_step(index)"><i class="fas fa-2x fa-caret-right"></i></a>&nbsp;&nbsp;
+                        <a class="move_step_up" title="Move Step Up" @click="move_step_up(index)"><i class="fas fa-2x fa-caret-up"></i></a>&nbsp;&nbsp;
+                        <a class="move_step_down" title="Move Step Down" @click="move_step_down(index)"><i class="fas fa-2x fa-caret-down"></i></a>&nbsp;&nbsp;
+                        <a class="configure_step" title="Configure Step" @click="configure-step(index)"><i class="fas fa-2x fa-cog"></i></a>&nbsp;&nbsp;
+                        <a class="delete_step" title="Delete Step" @click="delete_step(index)"><i class="fas fa-2x fa-trash"></i></a>
+                    </div>
+                </b-card>
+            </div>
+        </div>
+    </div>
+</div>
