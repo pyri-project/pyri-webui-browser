@@ -63,6 +63,19 @@ async def stop_all_procedure(device_manager):
         
         js.window.alert(f"Stop all procedures failed:\n\n{traceback.format_exc()}" )
 
+async def stop_program_master(device_manager):
+    try:
+        c = device_manager.get_device_subscription("program_master").GetDefaultClient()
+        await c.async_stop(None)
+       
+    except Exception as e:
+        
+        js.window.alert(f"Stop program master failed:\n\n{traceback.format_exc()}" )
+
+def do_stop_all(core,device_manager):
+    core.create_task(stop_all_procedure(device_manager))
+    core.create_task(stop_program_master(device_manager))
+
 def gen_block_uid():
 
     genUid_soup_ = '!#$%()*+,-./:;=?@[]^_`{|}~ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
@@ -265,7 +278,7 @@ class PyriProcedureListPanel(PyriWebUIBrowserPanelBase):
         self.core.create_task(self.do_new_pyri_procedure())
 
     def do_stop_all(self, evt):
-        self.core.create_task(stop_all_procedure(self.device_manager))
+        do_stop_all(self.core,self.device_manager)
 
 
 class PyriGlobalsListPanel(PyriWebUIBrowserPanelBase):
@@ -852,7 +865,7 @@ class PyriBlocklyProgramPanel(PyriWebUIBrowserPanelBase):
         self.core.create_task(run_procedure(self.device_manager,self.procedure_name,self.vue))
 
     def do_stop_all(self, evt):
-        self.core.create_task(stop_all_procedure(self.device_manager))
+        do_stop_all(self.core,self.device_manager)
 
 
 class PyriEditorProgramPanel(PyriWebUIBrowserPanelBase):
@@ -967,7 +980,7 @@ class PyriEditorProgramPanel(PyriWebUIBrowserPanelBase):
         self.core.create_task(run_procedure(self.device_manager,self.procedure_name,self.vue))
 
     def do_stop_all(self, evt):
-        self.core.create_task(stop_all_procedure(self.device_manager))
+        do_stop_all(self.core,self.device_manager)
 
     def _get_iframe(self):
         iframe = self.core.layout.layout.root.getItemsById(f"procedure_pyri_{self.procedure_name}")[0]\

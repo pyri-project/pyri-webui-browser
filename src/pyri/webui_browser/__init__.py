@@ -92,6 +92,7 @@ class PyriWebUIBrowser:
             self._device_manager.connect_device("variable_storage")        
             self._device_manager.connect_device("devices_states")
             self._device_manager.connect_device("sandbox")
+            self._device_manager.connect_device("program_master")
 
             self._devices_states_obj_sub = self._device_manager.get_device_subscription("devices_states")
             
