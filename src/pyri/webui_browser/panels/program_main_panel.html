@@ -5,12 +5,14 @@
         <b-button variant="success" @click="run"><i class="fa fa-play"></i> Run</b-button>
         <b-button variant="info" @click="step_one"><i class="fas fa-level-down-alt"></i> Step One</b-button>
         <b-button @click="pause"><i class="fas fa-pause"></i> Pause</b-button>
-        <b-button variant="danger" @click="stop_all"><i class="fa fa-stop"></i> Stop All</b-button>
+        <b-button variant="danger" @click="stop_all"><i class="fa fa-stop"></i> Stop All</b-button> 
+        <b-button variant="warning" @click="clear_pointer">Clear Pointer</b-button> 
+        <b-button variant="warning" @click="clear_error">Clear Errors</b-button>    
         <b-button variant="success" @click="add_step"><i class="fa fa-plus-circle"></i> Add Step</b-button>
     </div>
     <div style="flex: 1;" class="overflow-auto">
         <div style="max-width:500px;padding:20px;margin:auto">
-            <b-card bg-variant="success" style="border-radius:10px;margin:10px">
+            <b-card style="border-radius:10px;margin:10px">
                 <h3 class="text-center">Start</h3>
             </b-card>
             <div id="program_master_steps">

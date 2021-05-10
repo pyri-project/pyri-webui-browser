@@ -1,5 +1,7 @@
 import json
 from typing import List, Dict, Callable, Any
+import uuid
+
 from ..plugins.panel import PyriWebUIBrowserPanelBase
 from .. import PyriWebUIBrowser
 import importlib_resources
@@ -539,6 +541,8 @@ async def add_program_panel(panel_type: str, core: PyriWebUIBrowser, parent_elem
     core.layout.register_component(f"program_main",register_program_main_panel)
 
     program_main_panel=PyriProgramMainPanel(core,core.device_manager)
+
+    core.create_task(program_main_panel.run())
 
     procedure_list_panel_html = importlib_resources.read_text(__package__,"program_panel.html")
 
@@ -1159,7 +1163,7 @@ class PyriProgramMainPanel(PyriWebUIBrowserPanelBase):
             {
                 "save": self.save,
                 "reload": self.reload,
-                "run": self.run,
+                "run": self.run_btn,
                 "step_one": self.step_one,
                 "pause": self.pause,
                 "stop_all": self.stop_all,
@@ -1168,7 +1172,9 @@ class PyriProgramMainPanel(PyriWebUIBrowserPanelBase):
                 "move_step_up": self.move_step_up,
                 "move_step_down": self.move_step_down,
                 "delete_step": self.delete_step,
-                "configure_step": self.configure_step
+                "configure_step": self.configure_step,
+                "clear_error": self.clear_error,
+                "clear_pointer": self.clear_pointer
             }
         }))
 
@@ -1241,14 +1247,32 @@ class PyriProgramMainPanel(PyriWebUIBrowserPanelBase):
     def reload(self, evt):
         self.core.create_task(self.do_reload(True))
 
-    def run(self, evt):
-        pass
+    async def do_run(self):
+        try:
+            await self._get_client().async_run(None)
+        except:
+            js.alert(f"Run failed :\n\n{traceback.format_exc()}")
+
+    def run_btn(self, evt):
+        self.core.create_task(self.do_run())
+
+    async def do_step_one(self):
+        try:
+            await self._get_client().async_step_one(None)
+        except:
+            js.alert(f"Step one failed :\n\n{traceback.format_exc()}")
 
     def step_one(self, evt):
-        pass
+        self.core.create_task(self.do_step_one())
+
+    async def do_pause(self):
+        try:
+            await self._get_client().async_pause(None)
+        except:
+            js.alert(f"Pause failed :\n\n{traceback.format_exc()}")
 
     def pause(self, evt):
-        pass
+        self.core.create_task(self.do_pause())
 
     def stop_all(self, evt):
         do_stop_all(self.core,self.device_manager)
@@ -1256,8 +1280,38 @@ class PyriProgramMainPanel(PyriWebUIBrowserPanelBase):
     def add_step(self, evt):
         pass
 
+    async def do_move_cursor_to_step(self,step_id):
+        try:
+            await self._get_client().async_setf_step_pointer(step_id,None)
+        except:
+            js.alert(f"Move cursor to step failed :\n\n{traceback.format_exc()}")
+
+
+    async def do_clear_error(self):
+        try:
+            await self._get_client().async_clear_errors(None)
+        except:
+            js.alert(f"Clear errors failed :\n\n{traceback.format_exc()}")
+
+    def clear_error(self,evt):
+        self.core.create_task(self.do_clear_error())
+
+    async def do_clear_pointer(self):
+        try:
+            await self._get_client().async_clear_step_pointer(None)
+        except:
+            js.alert(f"Clear step pointer failed :\n\n{traceback.format_exc()}")
+
+    def clear_pointer(self,evt):
+        self.core.create_task(self.do_clear_pointer())
+        
+
     def move_cursor_to_step(self, index):
-        pass
+        try:
+            step_id = self.current_program.steps[index].step_id
+            self.core.create_task(self.do_move_cursor_to_step(step_id))
+        except:
+            js.alert(f"Move cursor to step failed :\n\n{traceback.format_exc()}")
 
     def move_step_up(self, index):
         pass
@@ -1270,3 +1324,73 @@ class PyriProgramMainPanel(PyriWebUIBrowserPanelBase):
 
     def configure_step(self, index):
         pass
+
+    def _get_card_header(self,card_id):
+        el = js.document.getElementById(card_id)
+        if el is None:
+            return None
+        els2 = el.getElementsByClassName("card-header")
+        if len(els2) > 0:
+            return els2[0]
+        else:
+            return None        
+
+    async def run(self):
+        await RRN.AsyncSleep(0.1,None)
+        
+        highlighted_step_uuid = None
+        highlighted_step_class = None
+                
+        while True:
+            try:
+                try:
+                    program_master_state = None
+                    e_state = self.core.devices_states.devices_states["program_master"].state
+                    if e_state is not None:
+                        for e in e_state:
+                            if e.type == "tech.pyri.program_master.PyriProgramState":
+                                program_master_state = e.state_data.data
+                except KeyError:
+                    traceback.print_exc()
+                else:
+                    if program_master_state is not None:
+                        current_step_uuid = _rr_uuid_to_py_uuid(program_master_state.current_step)
+                        flags = program_master_state.program_state_flags
+                        if (flags & 0x2) != 0:
+                            step_class = "bg-danger"
+                        elif (flags & 0x10) != 0:
+                            step_class = "bg-warning"
+                        elif (flags & 0x8) != 0:
+                            step_class = "bg-success"
+                        else:
+                            step_class = "bg-info"
+                        if highlighted_step_uuid != current_step_uuid:
+                            if highlighted_step_uuid is not None:
+                                highlighted_el = self._get_card_header(f"program-main-step_{str(highlighted_step_uuid)}")
+                                if highlighted_el is not None:
+                                    highlighted_el.className = "card-header"
+                                highlighted_step_uuid = None
+                                highlighted_step_class = None
+                            
+                            if current_step_uuid != uuid.UUID(bytes=b'\x00'*16):
+                                highlighted_el = self._get_card_header(f"program-main-step_{str(current_step_uuid)}")
+                                if highlighted_el is not None:
+                                    highlighted_el.className = f"card-header {step_class}"
+                                    highlighted_step_uuid = current_step_uuid
+                                    highlighted_step_class = step_class
+
+                        if highlighted_step_uuid is not None and highlighted_step_class != step_class:
+                            highlighted_el = self._get_card_header(f"program-main-step_{str(highlighted_step_uuid)}")
+                            if highlighted_el is not None:
+                                highlighted_el.className = f"card-header {step_class}"
+                                highlighted_step_class = step_class
+
+            except:
+                traceback.print_exc()
+
+            await RRN.AsyncSleep(0.2,None)
+
+
+def _rr_uuid_to_py_uuid(rr_uuid):
+    uuid_bytes = rr_uuid["uuid_bytes"].tobytes()
+    return uuid.UUID(bytes=uuid_bytes)
