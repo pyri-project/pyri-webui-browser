@@ -12,7 +12,7 @@
     </div>
     <div style="flex: 1;" class="overflow-auto">
         <div style="max-width:500px;padding:20px;margin:auto">
-            <b-card style="border-radius:10px;margin:10px">
+            <b-card style="border-radius:10px;margin:10px;padding:0px" id="program_main_start_marker">
                 <h3 class="text-center">Start</h3>
             </b-card>
             <div id="program_master_steps">
@@ -33,11 +33,45 @@
                         <a class="move_cursor_to_step" title="Move Cursor To Step" @click="move_cursor_to_step(index)"><i class="fas fa-2x fa-caret-right"></i></a>&nbsp;&nbsp;
                         <a class="move_step_up" title="Move Step Up" @click="move_step_up(index)"><i class="fas fa-2x fa-caret-up"></i></a>&nbsp;&nbsp;
                         <a class="move_step_down" title="Move Step Down" @click="move_step_down(index)"><i class="fas fa-2x fa-caret-down"></i></a>&nbsp;&nbsp;
-                        <a class="configure_step" title="Configure Step" @click="configure-step(index)"><i class="fas fa-2x fa-cog"></i></a>&nbsp;&nbsp;
+                        <a class="configure_step" title="Configure Step" @click="configure_step(index)"><i class="fas fa-2x fa-cog"></i></a>&nbsp;&nbsp;
                         <a class="delete_step" title="Delete Step" @click="delete_step(index)"><i class="fas fa-2x fa-trash"></i></a>
                     </div>
                 </b-card>
             </div>
         </div>
     </div>
+    <b-modal
+        id="program_main_edit_step_modal"
+        title="Edit Step"
+        @ok="edit_step_ok"
+        hide-header-close
+        scrollable
+    >
+    <b-form-group
+        label="Step Name"
+        label-for="program_main_edit_step_name"
+    >
+        <b-form-input id="program_main_edit_step_name" v-model="edit_step_name"></b-form-input>
+    </b-form-group>
+    <b-form-group
+        label="Procedure Name"
+        label-for="program_main_edit_step_procedure"
+    >
+        <b-form-input id="program_main_edit_step_procedure" v-model="edit_step_procedure_name"></b-form-input>
+    </b-form-group>
+    <b-form-group
+        label="Procedure Args (one per line)"
+        label-for="program_main_edit_step_procedure_args"
+    >
+        <b-form-textarea id="program_main_edit_step_procedure_args" v-model="edit_step_procedure_args" rows="2" max-rows="6"></b-form-textarea>
+    </b-form-group>
+
+    <b-form-group
+        label="Next Steps (one per line)"
+        label-for="program_main_edit_step_next_steps"
+    >
+        <b-form-textarea id="program_main_edit_step_next_steps" v-model="edit_step_next_steps" rows="4" max-rows="8"></b-form-textarea>
+    </b-form-group>
+    </b-modal>
+
 </div>

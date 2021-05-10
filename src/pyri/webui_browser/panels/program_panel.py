@@ -1157,7 +1157,13 @@ class PyriProgramMainPanel(PyriWebUIBrowserPanelBase):
             "data":
             {
                 "program_name": "main",
-                "program_steps": []
+                "program_steps": [],
+                "edit_step_name": "",
+                "edit_step_uuid": None,
+                "edit_step_index": -1,
+                "edit_step_procedure_name": "",
+                "edit_step_procedure_args": "",
+                "edit_step_next_steps": ""
             },
             "methods":
             {
@@ -1174,19 +1180,33 @@ class PyriProgramMainPanel(PyriWebUIBrowserPanelBase):
                 "delete_step": self.delete_step,
                 "configure_step": self.configure_step,
                 "clear_error": self.clear_error,
-                "clear_pointer": self.clear_pointer
+                "clear_pointer": self.clear_pointer,
+                "edit_step_ok": self.edit_step_ok
             }
         }))
 
         self.vue = program_main_panel
+
+        self.highlighted_step_uuid = None
+        self.highlighted_step_class = None
 
         self.core.create_task(self.do_reload())
          
     def _get_client(self):
         return self.device_manager.get_device_subscription("program_master").GetDefaultClient()
 
+    async def do_save(self):
+        try:
+            program = self.current_program
+            assert program is not None, "Internal program error"
+            program_var = RR.VarValue(program,"tech.pyri.program_master.PyriProgram")
+            var_storage = self.device_manager.get_device_subscription("variable_storage").GetDefaultClient()
+            await var_storage.async_setf_variable_value("program",self.program_name,program_var,None)
+        except:
+            js.alert(f"Run failed :\n\n{traceback.format_exc()}")
+
     def save(self, evt):
-        pass
+        self.core.create_task(self.do_save())
 
     def _op_code_to_class(self,opcode):
         if opcode == 1:
@@ -1278,7 +1298,11 @@ class PyriProgramMainPanel(PyriWebUIBrowserPanelBase):
         do_stop_all(self.core,self.device_manager)
 
     def add_step(self, evt):
-        pass
+        try:
+            self.fill_edit_step(-1)
+            self.vue["$bvModal"].show("program_main_edit_step_modal")
+        except:
+            traceback.print_exc()
 
     async def do_move_cursor_to_step(self,step_id):
         try:
@@ -1314,18 +1338,62 @@ class PyriProgramMainPanel(PyriWebUIBrowserPanelBase):
             js.alert(f"Move cursor to step failed :\n\n{traceback.format_exc()}")
 
     def move_step_up(self, index):
-        pass
+        try:
+            program = self.current_program
+            if index == 0:
+                return
+
+            step = program.steps.pop(index)
+            program.steps.insert(index-1,step)
+            
+            self.vue["$data"].program_steps = js.python_to_js(self._program_to_plain(program))
+            self.current_program = program
+            self.highlighted_step_class = None
+            self.highlighted_step_uuid = None
+        except:
+            js.alert(f"Move step up failed :\n\n{traceback.format_exc()}")
 
     def move_step_down(self, index):
-        pass
+        try:
+            program = self.current_program
+            if not index < len(program.steps)-1:
+                return
+            step = program.steps.pop(index)
+            program.steps.insert(index+1,step)
+            
+            self.vue["$data"].program_steps = js.python_to_js(self._program_to_plain(program))
+            self.current_program = program
+            self.highlighted_step_class = None
+            self.highlighted_step_uuid = None
+        except:
+            js.alert(f"Move step down failed :\n\n{traceback.format_exc()}")
+
 
     def delete_step(self, index):
-        pass
+        try:
+            program = self.current_program
+            program.steps.pop(index)
+            
+            self.vue["$data"].program_steps = js.python_to_js(self._program_to_plain(program))
+            self.current_program = program
+            self.highlighted_step_class = None
+            self.highlighted_step_uuid = None
+        except:
+            js.alert(f"Move step down failed :\n\n{traceback.format_exc()}")
 
     def configure_step(self, index):
-        pass
+        try:
+            self.fill_edit_step(index)
+            self.vue["$bvModal"].show("program_main_edit_step_modal")
+        except:
+            traceback.print_exc()
 
     def _get_card_header(self,card_id):
+        print(f"_get_card_header cardid {card_id}")
+
+        if card_id == f"program-main-step_00000000-0000-0000-0000-000000000000":
+            return js.document.getElementById("program_main_start_marker")
+
         el = js.document.getElementById(card_id)
         if el is None:
             return None
@@ -1338,9 +1406,9 @@ class PyriProgramMainPanel(PyriWebUIBrowserPanelBase):
     async def run(self):
         await RRN.AsyncSleep(0.1,None)
         
-        highlighted_step_uuid = None
-        highlighted_step_class = None
-                
+        self.highlighted_step_uuid = None
+        self.highlighted_step_class = None
+
         while True:
             try:
                 try:
@@ -1364,32 +1432,180 @@ class PyriProgramMainPanel(PyriWebUIBrowserPanelBase):
                             step_class = "bg-success"
                         else:
                             step_class = "bg-info"
-                        if highlighted_step_uuid != current_step_uuid:
-                            if highlighted_step_uuid is not None:
-                                highlighted_el = self._get_card_header(f"program-main-step_{str(highlighted_step_uuid)}")
+                        if self.highlighted_step_uuid != current_step_uuid:
+                            if self.highlighted_step_uuid is not None:
+                                highlighted_el = self._get_card_header(f"program-main-step_{str(self.highlighted_step_uuid)}")
                                 if highlighted_el is not None:
                                     highlighted_el.className = "card-header"
-                                highlighted_step_uuid = None
-                                highlighted_step_class = None
+                                self.highlighted_step_uuid = None
+                                self.highlighted_step_class = None
                             
-                            if current_step_uuid != uuid.UUID(bytes=b'\x00'*16):
-                                highlighted_el = self._get_card_header(f"program-main-step_{str(current_step_uuid)}")
-                                if highlighted_el is not None:
-                                    highlighted_el.className = f"card-header {step_class}"
-                                    highlighted_step_uuid = current_step_uuid
-                                    highlighted_step_class = step_class
-
-                        if highlighted_step_uuid is not None and highlighted_step_class != step_class:
-                            highlighted_el = self._get_card_header(f"program-main-step_{str(highlighted_step_uuid)}")
+                        
+                            highlighted_el = self._get_card_header(f"program-main-step_{str(current_step_uuid)}")
                             if highlighted_el is not None:
                                 highlighted_el.className = f"card-header {step_class}"
-                                highlighted_step_class = step_class
+                                self.highlighted_step_uuid = current_step_uuid
+                                self.highlighted_step_class = step_class
+
+                        if self.highlighted_step_uuid is not None and self.highlighted_step_class != step_class:
+                            highlighted_el = self._get_card_header(f"program-main-step_{str(self.highlighted_step_uuid)}")
+                            if highlighted_el is not None:
+                                highlighted_el.className = f"card-header {step_class}"
+                                self.highlighted_step_class = step_class
 
             except:
                 traceback.print_exc()
 
             await RRN.AsyncSleep(0.2,None)
 
+    def edit_step_ok(self, evt):
+        name_regex = "^[a-zA-Z](?:\\w*[a-zA-Z0-9])?$"
+        step_regex = r"^(\w+)\s+(?:(stop)|(next)|(error)|(?:(jump))\s+([a-zA-Z](?:\w*[a-zA-Z0-9])?))$"
+        try:
+            step_name = self.vue["$data"].edit_step_name.strip()
+            m = re.match(name_regex, step_name)
+            if m is None:
+                js.alert(f"Invalid step name: {step_name}")
+                evt.preventDefault()
+                return
+
+            procedure_name = self.vue["$data"].edit_step_procedure_name.strip()
+            m = re.match(name_regex, procedure_name)
+            if m is None:
+                js.alert(f"Invalid procedure name: {procedure_name}")
+                evt.preventDefault()
+                return
+
+            procedure_args = self.vue["$data"].edit_step_procedure_args.strip().splitlines()
+            procedure_args = [s.strip() for s in procedure_args]
+            if "" in procedure_args:
+                js.alert(f"Invalid procedure args: {', '.join(procedure_args)}")
+                evt.preventDefault()
+                return
+
+            next_steps = self.vue["$data"].edit_step_next_steps.strip().splitlines()
+            for p in next_steps:
+                m = re.match(step_regex, p)
+                if m is None:
+                    js.alert(f"Invalid next steps: {', '.join(next_steps)}")
+                    evt.preventDefault()
+                    return
+                if m.group(5) is not None:
+                    jump_target_name = m.group(6)
+                    jump_target_found = False
+                    for s1 in self.current_program.steps:
+                        if s1.step_name == jump_target_name:
+                            jump_target_found = True
+                    if not jump_target_found:
+                        js.alert(f"Invalid jump target: {jump_target_name}")
+                        evt.preventDefault()
+                        return
+
+            step_index = self.vue["$data"].edit_step_index
+            step_uuid = uuid.UUID(self.vue["$data"].edit_step_uuid)
+
+            client = self._get_client()
+            uuid_util = UuidUtil(client_obj = client)
+
+            if step_index < 0:
+                step = RRN.NewStructure("tech.pyri.program_master.PyriProgramStep", client)
+                step.step_id = uuid_util.UuidFromPyUuid(step_uuid)
+            else:
+                step = self.current_program.steps[step_index]
+                assert step_uuid == _rr_uuid_to_py_uuid(step.step_id), "Internal error updating step"
+
+            step.step_name = step_name
+            step.procedure_name = procedure_name
+            step.procedure_args = procedure_args
+
+            next_steps2 = []
+            for p in next_steps:
+                n = RRN.NewStructure("tech.pyri.program_master.PyriProgramStepNext", client)
+                m = re.match(step_regex, p)
+                n.result = m.group(1)
+                n.jump_target = uuid_util.UuidFromPyUuid(uuid.UUID(bytes=b'\x00'*16))
+                if m.group(2) is not None:
+                    n.op_code = 1
+                elif m.group(3) is not None:
+                    n.op_code = 2
+                elif m.group(4) is not None:
+                    n.op_code = 4
+                elif m.group(5) is not None:
+                    n.op_code = 3
+                    jump_target_name = m.group(6)
+                    jump_target_uuid = None
+                    for s1 in self.current_program.steps:
+                        if s1.step_name == jump_target_name:
+                            jump_target_uuid = s1.step_id
+                    assert jump_target_uuid is not None, f"Internal error finding jump target {jump_target_name}"
+                    n.jump_target = jump_target_uuid
+
+                next_steps2.append(n)
+
+            step.next = next_steps2
+
+            if step_index < 0:
+                self.current_program.steps.append(step)
+            
+            self.vue["$data"].program_steps = js.python_to_js(self._program_to_plain(self.current_program))
+            self.highlighted_step_class = None
+            self.highlighted_step_uuid = None
+
+        except:
+            js.alert(f"Error applying changes:\n\n{traceback.format_exc()}")
+
+    def fill_edit_step(self, index):
+        step = None
+        if index >= 0:
+            try:
+                step = self.current_program.steps[index]
+            except IndexError:
+                pass
+        if step is not None:
+            self.vue["$data"].edit_step_name = step.step_name
+            self.vue["$data"].edit_step_uuid = str(_rr_uuid_to_py_uuid(step.step_id))
+            self.vue["$data"].edit_step_index = index
+            self.vue["$data"].edit_step_procedure_name = step.procedure_name
+            self.vue["$data"].edit_step_procedure_args = "\n".join(step.procedure_args)
+            next_steps = []
+            for n in step.next:
+                if n.op_code == 1:
+                    next_steps.append(f"{n.result} stop")
+                elif n.op_code == 2:
+                    next_steps.append(f"{n.result} next")
+                elif n.op_code == 3:
+                    jump_target = None
+                    jump_target_uuid = _rr_uuid_to_py_uuid(n.jump_target)
+                    for s3 in self.current_program.steps:
+                        if _rr_uuid_to_py_uuid(s3.step_id) == jump_target_uuid:
+                            jump_target = s3.step_name
+                            break
+                    if jump_target is None:
+                        next_steps.append(f"{n.result} error")    
+                    else:
+                        next_steps.append(f"{n.result} jump {str(jump_target)}")
+                elif n.op_code == 4:
+                    next_steps.append(f"{n.result} error")
+                else:
+                    next_steps.append(f"{n.result} error")
+            
+            self.vue["$data"].edit_step_next_steps = "\n".join(next_steps)
+        else:
+
+            new_ind = len(self.current_program.steps)
+            for s in self.current_program.steps:
+                m = re.match(r"^step(\d+)$", s.step_name)
+                if m is not None:
+                    ind1 = int(m.group(1)) + 1
+                    if ind1 > new_ind:
+                        new_ind = ind1
+
+            self.vue["$data"].edit_step_name = f"step{new_ind}"
+            self.vue["$data"].edit_step_uuid = str(uuid.uuid4())
+            self.vue["$data"].edit_step_index = -1
+            self.vue["$data"].edit_step_procedure_name = "my_procedure"
+            self.vue["$data"].edit_step_procedure_args = ""
+            self.vue["$data"].edit_step_next_steps = "DEFAULT next\nERROR error"
 
 def _rr_uuid_to_py_uuid(rr_uuid):
     uuid_bytes = rr_uuid["uuid_bytes"].tobytes()
