@@ -6,6 +6,15 @@ from RobotRaconteur.Client import *
 from pyri.device_manager_client import DeviceManagerClient
 import traceback
 from pyri.util.robotraconteur import robotraconteur_data_to_plain
+import jinja2
+
+
+def fill_rr_url_template(url):
+    hostname = js.window.location.hostname
+    t = jinja2.Template(url)
+    url2 = t.render({"HOSTNAME": hostname})
+    print(f"Connecting to device_manager service with url: {url2}")
+    return url2
 
 class PyriWebUIBrowser:
 
@@ -14,7 +23,7 @@ class PyriWebUIBrowser:
         self._config = config
         self._layout = PyriGoldenLayout(self)
         self._seqno = 0
-        self._device_manager = DeviceManagerClient(config["device_manager_url"],autoconnect=False,tcp_ipv4_only=True)
+        self._device_manager = DeviceManagerClient(fill_rr_url_template(config["device_manager_url"]),autoconnect=False,tcp_ipv4_only=True)
         self._devices_states_obj_sub = None
         self._devices_states_wire_sub = None
 
