@@ -416,7 +416,6 @@ class PyriGlobalsListPanel(PyriWebUIBrowserPanelBase):
     def reset_new_variable(self, *args):
         from ..plugins.variable_dialog import get_all_webui_browser_variable_dialog_infos
         dialog_infos = get_all_webui_browser_variable_dialog_infos()
-        print(dialog_infos)
 
         select_values=[]
         for d1 in dialog_infos.values():
@@ -1389,7 +1388,6 @@ class PyriProgramMainPanel(PyriWebUIBrowserPanelBase):
             traceback.print_exc()
 
     def _get_card_header(self,card_id):
-        print(f"_get_card_header cardid {card_id}")
 
         if card_id == f"program-main-step_00000000-0000-0000-0000-000000000000":
             return js.document.getElementById("program_main_start_marker")
