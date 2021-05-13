@@ -1200,7 +1200,17 @@ class PyriProgramMainPanel(PyriWebUIBrowserPanelBase):
             assert program is not None, "Internal program error"
             program_var = RR.VarValue(program,"tech.pyri.program_master.PyriProgram")
             var_storage = self.device_manager.get_device_subscription("variable_storage").GetDefaultClient()
-            await var_storage.async_setf_variable_value("program",self.program_name,program_var,None)
+            exists_l = await var_storage.async_filter_variables("program", "main", [], None)
+            if len(exists_l) > 0:
+                await var_storage.async_setf_variable_value("program",self.program_name,program_var,None)
+            else:
+                var_consts = RRN.GetConstants('tech.pyri.variable_storage', var_storage)
+                variable_persistence = var_consts["VariablePersistence"]
+                variable_protection_level = var_consts["VariableProtectionLevel"]
+                var_storage.async_add_variable2("program","main","tech.pyri.program_master.PyriProgram", \
+                    RR.VarValue(program,"tech.pyri.program_master.PyriProgram"), ["program"], {}, variable_persistence["const"], \
+                    None, variable_protection_level["read_write"], \
+                    [], "test state machine program", False, None)
         except:
             js.alert(f"Run failed :\n\n{traceback.format_exc()}")
 
@@ -1532,9 +1542,10 @@ class PyriProgramMainPanel(PyriWebUIBrowserPanelBase):
                     n.op_code = 3
                     jump_target_name = m.group(6)
                     jump_target_uuid = None
-                    for s1 in self.current_program.steps:
-                        if s1.step_name == jump_target_name:
-                            jump_target_uuid = s1.step_id
+                    if self.current_program is not None:
+                        for s1 in self.current_program.steps:
+                            if s1.step_name == jump_target_name:
+                                jump_target_uuid = s1.step_id
                     assert jump_target_uuid is not None, f"Internal error finding jump target {jump_target_name}"
                     n.jump_target = jump_target_uuid
 
@@ -1543,6 +1554,10 @@ class PyriProgramMainPanel(PyriWebUIBrowserPanelBase):
             step.next = next_steps2
 
             if step_index < 0:
+                if self.current_program is None:
+                    self.current_program = RRN.NewStructure("tech.pyri.program_master.PyriProgram", client)
+                    self.current_program.steps=[]
+                    self.current_program.name="main"
                 self.current_program.steps.append(step)
             
             self.vue["$data"].program_steps = js.python_to_js(self._program_to_plain(self.current_program))
@@ -1589,16 +1604,17 @@ class PyriProgramMainPanel(PyriWebUIBrowserPanelBase):
             
             self.vue["$data"].edit_step_next_steps = "\n".join(next_steps)
         else:
+            new_ind = 0
+            if self.current_program is not None:
+                new_ind = len(self.current_program.steps)
+                for s in self.current_program.steps:
+                    m = re.match(r"^step(\d+)$", s.step_name)
+                    if m is not None:
+                        ind1 = int(m.group(1))
+                        if ind1 > new_ind:
+                            new_ind = ind1
 
-            new_ind = len(self.current_program.steps)
-            for s in self.current_program.steps:
-                m = re.match(r"^step(\d+)$", s.step_name)
-                if m is not None:
-                    ind1 = int(m.group(1)) + 1
-                    if ind1 > new_ind:
-                        new_ind = ind1
-
-            self.vue["$data"].edit_step_name = f"step{new_ind}"
+            self.vue["$data"].edit_step_name = f"step{new_ind+1}"
             self.vue["$data"].edit_step_uuid = str(uuid.uuid4())
             self.vue["$data"].edit_step_index = -1
             self.vue["$data"].edit_step_procedure_name = "my_procedure"
