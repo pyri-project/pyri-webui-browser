@@ -25,9 +25,9 @@
     <iframe src="pyri_editor.html" id="procedure_pyri_iframe" @load="iframe_load" style="flex: 1; width: 100%"></iframe>
 
     <b-modal id="insert-function-modal" title="Insert Function" ok-title="Insert" @ok="insert_function_ok" @hidden = "insert_function_hidden" hide-header-close modal-class="modal-fullscreen2">
-        <div style="height: calc(100vh - 10rem)" style="display:flex;flex-direction:column">
+        <div style="height: calc(100vh - 10rem);display:flex;flex-direction:column">
         <b-form-select v-model="insert_function_selected" :options="insert_function_options" @change="insert_function_selected_changed" :select-size=10></b-form-select>
-        <div style="font-family:monospace;overflow-y:auto;flex:1;margin:8px"><br>{{ insert_function_selected_doc }}</div>
+        <div style="font-family:monospace;overflow-y:auto;flex:1;margin:8px;white-space:pre-wrap"><br>{{ insert_function_selected_doc }}</div>
         </div>
     </b-modal>
 </div>
