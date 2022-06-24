@@ -1,5 +1,7 @@
 import js
 import json
+from .util import to_js2
+from pyodide import create_proxy
 
 _golden_layout_config = {
     "settings":{
@@ -48,12 +50,12 @@ class PyriGoldenLayout:
     def init_golden_layout(self):
         
         layoutContainer = js.jQuery.find("#layoutContainer")
-        self._layout =js.GoldenLayout.new(js.python_to_js(_golden_layout_config), layoutContainer)
+        self._layout =js.GoldenLayout.new(to_js2(_golden_layout_config), layoutContainer)
 
 
         self._layout.init()
 
-        js.jQuery(js.window).resize(lambda _: self._layout.updateSize())
+        js.jQuery(js.window).resize(create_proxy(lambda _: self._layout.updateSize()))
 
     @property
     def layout_container(self):
@@ -64,10 +66,10 @@ class PyriGoldenLayout:
         return self._layout
 
     def register_component(self,name,constructor_function,py_this=None):
-        js.golden_layout_register_component(self._layout,name,constructor_function,py_this)
+        js.golden_layout_register_component(self._layout,name,create_proxy(constructor_function),py_this)
 
     def add_panel(self,panel_config):
-        self._layout.root.contentItems[0].addChild(js.python_to_js(panel_config))
+        self._layout.root.contentItems[0].addChild(to_js2(panel_config))
 
     def add_panel_menu_item(self,panel_id, text_label):
         menu_item = js.golden_layout_append_menu_item(text_label)

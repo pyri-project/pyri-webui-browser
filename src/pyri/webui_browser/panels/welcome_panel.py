@@ -5,6 +5,8 @@ import importlib_resources
 import js
 from RobotRaconteur.Client import *
 import traceback
+from ..util import to_js2
+from pyodide import create_proxy, to_js
 
 class PyriWelcomePanel(PyriWebUIBrowserPanelBase):
 
@@ -14,17 +16,17 @@ class PyriWelcomePanel(PyriWebUIBrowserPanelBase):
 
     def init_vue(self, vue):
         self.vue =vue
-        self.vue["$data"].count=20
+        getattr(self.vue,"$data").count=20
 
     
     def increment(self,  evt):
         print(int(evt.target.getAttribute("data-joint")))
-        self.vue["$data"].count+=1
+        getattr(self.vue,"$data").count+=1
 
     
     def decrement(self, evt):
         print(int(evt.target.getAttribute("data-joint")))
-        self.vue["$data"].count-=1
+        getattr(self.vue,"$data").count-=1
 
     
     async def run(self):
@@ -37,19 +39,19 @@ class PyriWelcomePanel(PyriWebUIBrowserPanelBase):
                 if devices_states is not None:
                     new_seqno = self.core.devices_states.seqno
                     if new_seqno != last_seqno:
-                        self.vue["$data"].seqno = new_seqno
+                        getattr(self.vue,"$data").seqno = new_seqno
                         last_seqno = new_seqno
             except:
                 traceback.print_exc()
-                self.vue["$data"].seqno = -1
+                getattr(self.vue,"$data").seqno = -1
             try:
                 new_devices = self.core.active_device_names
                 if set(new_devices) != last_devices:
-                    self.vue["$data"].active_device_names = new_devices
+                    getattr(self.vue,"$data").active_device_names = new_devices
                     last_devices = set(new_devices)
             except:
                 traceback.print_exc()
-                self.vue["$data"].active_device_names = []
+                getattr(self.vue,"$data").active_device_names = []
             await RRN.AsyncSleep(0.05,None)
         
         
@@ -81,7 +83,7 @@ async def add_welcome_panel(panel_type: str, core: PyriWebUIBrowser, parent_elem
 
     welcome_panel_obj = PyriWelcomePanel(core)
 
-    welcome_counter = js.Vue.new(js.python_to_js({
+    welcome_counter_args = to_js2({
         "el": "#welcome_counter",
         "data": {
             "count": 10,
@@ -93,7 +95,11 @@ async def add_welcome_panel(panel_type: str, core: PyriWebUIBrowser, parent_elem
             "increment": welcome_panel_obj.increment,
             "decrement": welcome_panel_obj.decrement
         }       
-    }))
+    })
+
+    js.console.log(welcome_counter_args)
+
+    welcome_counter = js.Vue.new(welcome_counter_args)
 
     welcome_panel_obj.init_vue(welcome_counter)
    

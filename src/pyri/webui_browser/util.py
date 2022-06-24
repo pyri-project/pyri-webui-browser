@@ -1,5 +1,7 @@
 from copy import copy
 import traceback
+from pyodide import to_js
+import js
 
 def device_status_name(devices_states, local_device_name):
     try:
@@ -65,3 +67,5 @@ def get_devices_with_type(core, device_types):
 def device_names_to_dropdown_options(names):
     return [{"value": n, "text": n} for n in names]
     
+def to_js2(val):
+    return to_js(val,dict_converter=js.Object.fromEntries)

@@ -9,6 +9,8 @@ from RobotRaconteur.RobotRaconteurPythonUtil import SplitQualifiedName
 
 from RobotRaconteur.Client import *
 from .. import util
+from ..util import to_js2
+from pyodide import create_proxy, to_js
 
 class PyriDevicesPanel(PyriWebUIBrowserPanelBase):
 
@@ -44,14 +46,14 @@ class PyriDevicesPanel(PyriWebUIBrowserPanelBase):
                 }
                 vue_devs.append(d2)
 
-            self.vue["$data"]["detected_devices"] = js.python_to_js(vue_devs)
+            getattr(self.vue,"$data").detected_devices = to_js2(vue_devs)
         except:            
             traceback.print_exc()
             js.alert(f"Refresh add device failed:\n\n{traceback.format_exc()}")
 
 
     def device_add(self, evt):
-        self.vue["$bvModal"].show("add-device-modal")        
+        getattr(self.vue,"$bvModal").show("add-device-modal")        
         self.core.create_task(self.do_refresh_device_add())
 
     async def do_add_device_selected(self,selected_device,local_dev_name):
@@ -66,7 +68,7 @@ class PyriDevicesPanel(PyriWebUIBrowserPanelBase):
             js.alert(f"Add device failed:\n\n{traceback.format_exc()}")
 
     def add_device_selected(self, selected_device):
-        self.vue["$bvModal"].hide("add-device-modal")
+        getattr(self.vue,"$bvModal").hide("add-device-modal")
         local_dev_name = js.prompt("Enter local device name")
         self.core.create_task(self.do_add_device_selected(selected_device,local_dev_name))
 
@@ -91,8 +93,8 @@ class PyriDevicesPanel(PyriWebUIBrowserPanelBase):
             }
             vue_devs.append(d2)
 
-            self.vue["$data"]["selected_device_info"] = js.python_to_js(vue_devs)
-            self.vue["$bvModal"].show("device-info-modal")
+            getattr(self.vue,"$data").selected_device_info = to_js2(vue_devs)
+            getattr(self.vue,"$bvModal").show("device-info-modal")
         except:            
             traceback.print_exc()
             js.alert(f"Get device info failed:\n\n{traceback.format_exc()}")
@@ -127,13 +129,13 @@ class PyriDevicesPanel(PyriWebUIBrowserPanelBase):
 
     def device_remove_selected(self, *args):
         
-        b_device_table = self.vue["$refs"].device_list
+        b_device_table = getattr(self.vue,"$refs").device_list
         selections = b_device_table.getSelections()
         dev_names = []
         count = len(selections)
         for i in range(count):
             t = selections[i]
-            dev_names.append(t["local_name"])
+            dev_names.append(t.local_name)
 
         if len(dev_names) == 0:
             return
@@ -179,12 +181,12 @@ class PyriDevicesPanel(PyriWebUIBrowserPanelBase):
                 table_updated = False
                 if set(new_devices) != last_devices:
                     #TODO: Remove old code
-                    # self.vue["$data"].active_device_names = js.python_to_js(new_devices)             
+                    # getattr(self.vue,"$data").active_device_names = to_js2(new_devices)             
                     # last_devices = set(new_devices)                    
                     # for d in last_devices:
                     #     try:
-                    #         self.vue["$data"].device_names[d] = devices_states.devices_states[d].device.name
-                    #         self.vue["$data"].device_state_flags[d] = util.device_state_flags(devices_states, d)
+                    #         getattr(self.vue,"$data").device_names[d] = devices_states.devices_states[d].device.name
+                    #         getattr(self.vue,"$data").device_state_flags[d] = util.device_state_flags(devices_states, d)
                     #     except:
                     #         pass
                     last_devices = set(new_devices)
@@ -200,17 +202,17 @@ class PyriDevicesPanel(PyriWebUIBrowserPanelBase):
                         }
                         
                         try:
-                            d["device_name"] = devices_states.devices_states[d].device.name
-                            d["device_state_flag"] = util.device_state_flags(devices_states, d)
+                            d1["device_name"] = devices_states.devices_states[d].device.name
+                            d1["state_flags"] = util.device_state_flags(devices_states, d)
                         except:
                             pass
                         new_table.append(d1)
-                    self.vue["$data"].device_list = js.python_to_js(new_table)
+                    getattr(self.vue,"$data").device_list = to_js2(new_table)
                     device_table = new_table
                     table_updated = True                    
                             
                 if not table_updated:
-                    b_device_table = self.vue["$refs"].device_list                    
+                    b_device_table = getattr(self.vue,"$refs").device_list                    
 
                     for i in range(len(device_table)):
                         t = device_table[i]
@@ -218,12 +220,12 @@ class PyriDevicesPanel(PyriWebUIBrowserPanelBase):
                         try:                            
                             new_status = util.device_status_name(devices_states,d)
                             if t["status"] != new_status:                                
-                                b_device_table.updateCell(js.python_to_js({"index": i, "field": "status", "value": new_status}))                                
+                                b_device_table.updateCell(to_js2({"index": i, "field": "status", "value": new_status}))                                
                                 t["status"] = new_status
                             
                             new_flags = util.device_state_flags(devices_states, d)
                             if t["state_flags"] != new_flags:
-                                b_device_table.updateCell(js.python_to_js({"index": i, "field": "state_flags", "value": new_flags}))
+                                b_device_table.updateCell(to_js2({"index": i, "field": "state_flags", "value": new_flags}))
                                 t["state_flags"] = new_flags
                         except:
                             traceback.print_exc()
@@ -231,7 +233,7 @@ class PyriDevicesPanel(PyriWebUIBrowserPanelBase):
                         try:
                             d_name = devices_states.devices_states[d].device.name
                             if t["device_name"] != d_name:
-                                b_device_table.updateCell(js.python_to_js({"index": i, "field": "device_name", "value": d_name}))
+                                b_device_table.updateCell(to_js2({"index": i, "field": "device_name", "value": d_name}))
                                 t["device_name"] = d_name
                         except:
                             pass
@@ -239,7 +241,7 @@ class PyriDevicesPanel(PyriWebUIBrowserPanelBase):
                         try:
                             implemented_types = self.implemented_types(d)                            
                             if t["types"] != implemented_types:
-                                b_device_table.updateCell(js.python_to_js({"index": i, "field": "types", "value": implemented_types}))
+                                b_device_table.updateCell(to_js2({"index": i, "field": "types", "value": implemented_types}))
                                 t["types"] = implemented_types
                         except:
                             traceback.print_exc()
@@ -248,13 +250,13 @@ class PyriDevicesPanel(PyriWebUIBrowserPanelBase):
                         #new_flags[d] = ""
                         #new_status[d] = "error"
 
-                #self.vue["$data"].active_device_status = js.python_to_js(new_status)
+                #getattr(self.vue,"$data").active_device_status = to_js2(new_status)
                         
-                #self.vue["$data"].device_state_flags = js.python_to_js(new_flags)
+                #getattr(self.vue,"$data").device_state_flags = to_js2(new_flags)
 
             except:
                 traceback.print_exc()
-                self.vue["$data"].device_list = []
+                getattr(self.vue,"$data").device_list = []
             
             await RRN.AsyncSleep(0.5,None)
         
@@ -285,7 +287,7 @@ async def add_devices_panel(panel_type: str, core: PyriWebUIBrowser, parent_elem
 
     devices_panel_obj = PyriDevicesPanel(core.device_manager, core)
 
-    devices_panel = js.Vue.new(js.python_to_js({
+    devices_panel = js.Vue.new(to_js2({
         "el": "#active_devices_table",
         "components": {
             "BootstrapTable": js.window.BootstrapTable
@@ -330,8 +332,8 @@ async def add_devices_panel(panel_type: str, core: PyriWebUIBrowser, parent_elem
                                                     <a class="device_list_remove" title="Remove Device" @click="device_remove(local_name)"><i class="fas fa-2x fa-trash"></i></a>""",
                     "events":
                     {
-                        "click .device_list_info": lambda e, value, row, d: devices_panel_obj.device_info(row["local_name"]),
-                        "click .device_list_remove": lambda e, value, row, d: devices_panel_obj.device_remove(row["local_name"])
+                        "click .device_list_info": lambda e, value, row, d: devices_panel_obj.device_info(row.local_name),
+                        "click .device_list_remove": lambda e, value, row, d: devices_panel_obj.device_remove(row.local_name)
                     }
                 }
             ],            
@@ -393,7 +395,7 @@ async def add_devices_panel(panel_type: str, core: PyriWebUIBrowser, parent_elem
                     "formatter": lambda a,b,c,d: '<a href="javascript:" class="device_panel_add_device"><i class="fas fs-4x fa-plus-circle"></i></a>',
                     "events":
                     {
-                        "click .device_panel_add_device": lambda e, value, row, d: devices_panel_obj.add_device_selected(row["device"])
+                        "click .device_panel_add_device": lambda e, value, row, d: devices_panel_obj.add_device_selected(row.device)
                     }
                     
                 }

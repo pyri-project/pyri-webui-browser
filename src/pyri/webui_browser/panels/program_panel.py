@@ -12,6 +12,7 @@ import random
 import re
 import io
 from RobotRaconteurCompanion.Util.UuidUtil import UuidUtil
+from ..util import to_js2
 
 async def run_procedure(device_manager, name, vue):
     try:
@@ -28,8 +29,8 @@ async def run_procedure(device_manager, name, vue):
         if vue is None:
             js.window.alert(f"Run procedure {name} complete:\n\n{res_printed}")
         else:
-            vue["$bvToast"].toast(f"Run procedure {name} complete:\n\n{res_printed}",
-                js.python_to_js({
+            getattr(vue,"$bvToast").toast(f"Run procedure {name} complete:\n\n{res_printed}",
+                to_js2({
                     "title": "Run Procedure Complete",
                     "autoHideDelay": 5000,
                     "appendToToast": True,
@@ -47,8 +48,8 @@ async def run_procedure(device_manager, name, vue):
         if vue is None:
             js.window.alert(msg )
         else:
-            vue["$bvToast"].toast(msg,
-                js.python_to_js({
+            getattr(vue,"$bvToast").toast(msg,
+                to_js2({
                     "title": "Run Procedure Failed",
                     "autoHideDelay": 5000,
                     "appendToToast": True,
@@ -158,7 +159,7 @@ class PyriProcedureListPanel(PyriWebUIBrowserPanelBase):
             var_storage = self.device_manager.get_device_subscription("variable_storage").GetDefaultClient()
             await var_storage.async_delete_variable("procedure", name, None)
         except:
-            pass
+            traceback.print_exc()
 
     def procedure_delete(self, name):
         if js.window.confirm(f"Delete procedure: {name}?"):
@@ -173,13 +174,13 @@ class PyriProcedureListPanel(PyriWebUIBrowserPanelBase):
             pass
 
     def procedure_delete_selected(self, *args):
-        b_procedure_table = self.vue["$refs"].procedures_list
+        b_procedure_table = getattr(self.vue,"$refs").procedures_list
         selections = b_procedure_table.getSelections()
         names = []
         count = len(selections)
         for i in range(count):
             t = selections[i]
-            names.append(t["procedure_name"])
+            names.append(t.procedure_name)
 
         if len(names) == 0:
             return
@@ -228,7 +229,7 @@ class PyriProcedureListPanel(PyriWebUIBrowserPanelBase):
                     )        
 
             if self.vue is not None:
-                self.vue["$data"].procedures = js.python_to_js(procedures)
+                getattr(self.vue,"$data").procedures = to_js2(procedures)
         except:
             traceback.print_exc()
 
@@ -343,13 +344,13 @@ class PyriGlobalsListPanel(PyriWebUIBrowserPanelBase):
 
     def variable_delete_selected(self, *args):
         
-        b_globals_table = self.vue["$refs"].globals_list
+        b_globals_table = getattr(self.vue,"$refs").globals_list
         selections = b_globals_table.getSelections()
         names = []
         count = len(selections)
         for i in range(count):
             t = selections[i]
-            names.append(t["variable_name"])
+            names.append(t.variable_name)
 
         if len(names) == 0:
             return
@@ -397,7 +398,7 @@ class PyriGlobalsListPanel(PyriWebUIBrowserPanelBase):
                     )        
 
             if self.vue is not None:
-                self.vue["$data"].variables = js.python_to_js(vars)
+                getattr(self.vue,"$data").variables = to_js2(vars)
         except:
             traceback.print_exc()
 
@@ -409,7 +410,7 @@ class PyriGlobalsListPanel(PyriWebUIBrowserPanelBase):
         try:
             self.reset_new_variable()
                         
-            self.vue["$bvModal"].show("new_variable_modal")
+            getattr(self.vue,"$bvModal").show("new_variable_modal")
         except:
             traceback.print_exc()
 
@@ -423,10 +424,10 @@ class PyriGlobalsListPanel(PyriWebUIBrowserPanelBase):
                 v = ",".join([d2.variable_type] + d2.variable_tags)
                 select_values.append({"value": v, "text": d2.display_name})
 
-        self.vue["$data"].new_variable_type_select_options = js.python_to_js(select_values)
+        getattr(self.vue,"$data").new_variable_type_select_options = to_js2(select_values)
         if len(select_values) > 0:
-            self.vue["$data"].new_variable_type_selected = select_values[0]["value"]
-        self.vue["$data"].new_variable_name = ""        
+            getattr(self.vue,"$data").new_variable_type_selected = select_values[0]["value"]
+        getattr(self.vue,"$data").new_variable_name = ""        
 
     def handle_new_variable(self, *args):
         self.core.create_task(self.do_handle_new_variable())
@@ -436,13 +437,13 @@ class PyriGlobalsListPanel(PyriWebUIBrowserPanelBase):
 
     async def do_handle_new_variable(self):
         try:
-            var_name = self.vue["$data"].new_variable_name
+            var_name = getattr(self.vue,"$data").new_variable_name
             m = re.match("^[a-zA-Z](?:\\w*[a-zA-Z0-9])?$", var_name)
             if not m:
                 js.alert(f"The variable name \"{var_name}\" is invalid")
                 return
             
-            var_type1 = self.vue["$data"].new_variable_type_selected
+            var_type1 = getattr(self.vue,"$data").new_variable_type_selected
             if len(var_type1) == 0:
                 js.alert(f"The variable type must be selected")
                 return
@@ -561,11 +562,11 @@ async def add_program_panel(panel_type: str, core: PyriWebUIBrowser, parent_elem
 
     core.layout.register_component("procedure_list",register_procedure_list_panel)
 
-    core.layout.layout.root.getItemsById("program")[0].addChild(js.python_to_js(procedure_list_panel_config))
+    core.layout.layout.root.getItemsById("program")[0].addChild(to_js2(procedure_list_panel_config))
 
     procedure_list_panel_obj = PyriProcedureListPanel(core, core.device_manager)
 
-    program_panel = js.Vue.new(js.python_to_js({
+    program_panel = js.Vue.new(to_js2({
         "el": "#procedures_table",
         "components": {
             "BootstrapTable": js.window.BootstrapTable
@@ -604,11 +605,11 @@ async def add_program_panel(panel_type: str, core: PyriWebUIBrowser, parent_elem
                                                     <a class="procedure_list_info" title="Procedure Info"><i class="fas fa-2x fa-info-circle"></i></a>&nbsp;
                                                     <a class="procedure_list_remove" title="Delete Procedure"><i class="fas fa-2x fa-trash"></i></a>""",
                     "events": {
-                        "click .procedure_list_play": lambda e, value, row, d: procedure_list_panel_obj.procedure_run(row["procedure_name"]),
-                        "click .procedure_list_open": lambda e, value, row, d: procedure_list_panel_obj.procedure_open(row["procedure_name"]),
-                        "click .procedure_list_copy": lambda e, value, row, d: procedure_list_panel_obj.procedure_copy(row["procedure_name"]),
-                        "click .procedure_list_info": lambda e, value, row, d: procedure_list_panel_obj.procedure_info(row["procedure_name"]),
-                        "click .procedure_list_remove": lambda e, value, row, d: procedure_list_panel_obj.procedure_delete(row["procedure_name"])
+                        "click .procedure_list_play": lambda e, value, row, d: procedure_list_panel_obj.procedure_run(row.procedure_name),
+                        "click .procedure_list_open": lambda e, value, row, d: procedure_list_panel_obj.procedure_open(row.procedure_name),
+                        "click .procedure_list_copy": lambda e, value, row, d: procedure_list_panel_obj.procedure_copy(row.procedure_name),
+                        "click .procedure_list_info": lambda e, value, row, d: procedure_list_panel_obj.procedure_info(row.procedure_name),
+                        "click .procedure_list_remove": lambda e, value, row, d: procedure_list_panel_obj.procedure_delete(row.procedure_name)
                     }
                 }
             ],
@@ -683,11 +684,11 @@ def add_globals_panel(core):
 
     core.layout.register_component("globals_list",register_globals_list_panel)
 
-    core.layout.layout.root.getItemsById("program")[0].addChild(js.python_to_js(globals_list_panel_config))
+    core.layout.layout.root.getItemsById("program")[0].addChild(to_js2(globals_list_panel_config))
 
     globals_list_panel_obj = PyriGlobalsListPanel(core, core.device_manager)
 
-    globals_panel = js.Vue.new(js.python_to_js({
+    globals_panel = js.Vue.new(to_js2({
         "el": "#globals_table",
         "components": {
             "BootstrapTable": js.window.BootstrapTable
@@ -732,10 +733,10 @@ def add_globals_panel(core):
                                                 <a class="globals_table_remove" title="Delete Variable"><i class="fas fa-2x fa-trash"></i></a>
                                                 """,
                     "events": {
-                        "click .globals_table_open": lambda e, value, row, d: globals_list_panel_obj.variable_open(row["variable_name"]),
-                        "click .globals_table_copy": lambda e, value, row, d: globals_list_panel_obj.variable_copy(row["variable_name"]),
-                        "click .globals_table_info": lambda e, value, row, d: globals_list_panel_obj.variable_info(row["variable_name"]),
-                        "click .globals_table_remove": lambda e, value, row, d: globals_list_panel_obj.variable_delete(row["variable_name"]),
+                        "click .globals_table_open": lambda e, value, row, d: globals_list_panel_obj.variable_open(row.variable_name),
+                        "click .globals_table_copy": lambda e, value, row, d: globals_list_panel_obj.variable_copy(row.variable_name),
+                        "click .globals_table_info": lambda e, value, row, d: globals_list_panel_obj.variable_info(row.variable_name),
+                        "click .globals_table_remove": lambda e, value, row, d: globals_list_panel_obj.variable_delete(row.variable_name),
                     }
                 }
             ],
@@ -791,7 +792,7 @@ def add_output_panel(core):
 
     core.layout.register_component("procedure_output",register_output_panel)
 
-    core.layout.layout.root.getItemsById("program")[0].addChild(js.python_to_js(output_list_panel_config))
+    core.layout.layout.root.getItemsById("program")[0].addChild(to_js2(output_list_panel_config))
 
     output_panel_obj = PyriOutputPanel(core, core.device_manager)
     core.create_task(output_panel_obj.run())
@@ -814,10 +815,10 @@ class PyriBlocklyProgramPanel(PyriWebUIBrowserPanelBase):
             "isClosable": True
         }
        
-        core.layout.layout.root.getItemsById("program")[0].addChild(js.python_to_js(blockly_panel_config))
+        core.layout.layout.root.getItemsById("program")[0].addChild(to_js2(blockly_panel_config))
         res = core.layout.layout.root.getItemsById(f"procedure_blockly_{procedure_name}")[0].element.find("#procedure_blockly_component")[0]
                 
-        procedure_panel = js.Vue.new(js.python_to_js({
+        procedure_panel = js.Vue.new(to_js2({
             "el": res,
             "data":
             {
@@ -900,10 +901,10 @@ class PyriEditorProgramPanel(PyriWebUIBrowserPanelBase):
             "isClosable": True
         }
        
-        core.layout.layout.root.getItemsById("program")[0].addChild(js.python_to_js(pyri_panel_config))
+        core.layout.layout.root.getItemsById("program")[0].addChild(to_js2(pyri_panel_config))
         res = core.layout.layout.root.getItemsById(f"procedure_pyri_{procedure_name}")[0].element.find("#procedure_pyri_component")[0]
                 
-        procedure_panel = js.Vue.new(js.python_to_js({
+        procedure_panel = js.Vue.new(to_js2({
             "el": res,
             "data":
             {
@@ -943,7 +944,8 @@ class PyriEditorProgramPanel(PyriWebUIBrowserPanelBase):
                 "editor_redo": self.editor_redo,
                 "insert_function": self.insert_function,
                 "insert_function_selected_changed": self.insert_function_selected_changed,
-                "insert_function_ok": self.insert_function_ok
+                "insert_function_ok": self.insert_function_ok,
+                "insert_function_hidden": self.insert_function_hidden
             }
         }))
 
@@ -1073,7 +1075,7 @@ class PyriEditorProgramPanel(PyriWebUIBrowserPanelBase):
     async def do_insert_function(self):
         try:
             res = await js.fetch('/sandbox_functions/all_functions.json', {"cache": "no-store"})
-            res_io = io.TextIOWrapper(io.BytesIO(await res.arrayBuffer()),encoding="utf-8")
+            res_io = io.TextIOWrapper(io.BytesIO((await res.arrayBuffer()).to_py()),encoding="utf-8")
             res_str = res_io.read()
 
             res_json = json.loads(res_str)
@@ -1092,9 +1094,9 @@ class PyriEditorProgramPanel(PyriWebUIBrowserPanelBase):
                     "text": v["full_signature"]
                 })
 
-            self.vue["$data"].insert_function_options = js.python_to_js(opts)
+            getattr(self.vue,"$data").insert_function_options = to_js2(opts)
 
-            self.vue["$bvModal"].show("insert-function-modal")
+            getattr(self.vue,"$bvModal").show("insert-function-modal")
         except:
             traceback.print_exc()
 
@@ -1107,13 +1109,13 @@ class PyriEditorProgramPanel(PyriWebUIBrowserPanelBase):
 
         try:
             v = self.all_functions[value]
-            self.vue["$data"].insert_function_selected_doc = v["docstring"] or ""
+            getattr(self.vue,"$data").insert_function_selected_doc = v["docstring"] or ""
         except:
             traceback.print_exc()
 
     def insert_function_ok(self,evt):
         try:
-            value = self.vue["$data"].insert_function_selected
+            value = getattr(self.vue,"$data").insert_function_selected
             if value is None:
                 return
             v = self.all_functions[value]
@@ -1125,8 +1127,8 @@ class PyriEditorProgramPanel(PyriWebUIBrowserPanelBase):
             traceback.print_exc()
 
     def insert_function_hidden(self,*args):
-        self.vue["$data"].insert_function_selected_doc = ""
-        self.vue["$data"].insert_function_selected = None
+        getattr(self.vue,"$data").insert_function_selected_doc = ""
+        getattr(self.vue,"$data").insert_function_selected = None
 
 class PyriProgramMainPanel(PyriWebUIBrowserPanelBase):
     def __init__(self, core: PyriWebUIBrowser, device_manager):
@@ -1148,10 +1150,10 @@ class PyriProgramMainPanel(PyriWebUIBrowserPanelBase):
             "isClosable": False
         }
 
-        core.layout.layout.root.getItemsById("program")[0].addChild(js.python_to_js(main_panel_config))
+        core.layout.layout.root.getItemsById("program")[0].addChild(to_js2(main_panel_config))
         res = core.layout.layout.root.getItemsById(f"program_main_main")[0].element.find("#program_main_panel")[0]
 
-        program_main_panel = js.Vue.new(js.python_to_js({
+        program_main_panel = js.Vue.new(to_js2({
             "el": res,
             "data":
             {
@@ -1265,7 +1267,7 @@ class PyriProgramMainPanel(PyriWebUIBrowserPanelBase):
         try:
             var_storage = self.device_manager.get_device_subscription("variable_storage").GetDefaultClient()
             program = await var_storage.async_getf_variable_value("program",self.program_name,None)
-            self.vue["$data"].program_steps = js.python_to_js(self._program_to_plain(program.data))
+            getattr(self.vue,"$data").program_steps = to_js2(self._program_to_plain(program.data))
             self.current_program = program.data
         except:
             if show_error:
@@ -1309,7 +1311,7 @@ class PyriProgramMainPanel(PyriWebUIBrowserPanelBase):
     def add_step(self, evt):
         try:
             self.fill_edit_step(-1)
-            self.vue["$bvModal"].show("program_main_edit_step_modal")
+            getattr(self.vue,"$bvModal").show("program_main_edit_step_modal")
         except:
             traceback.print_exc()
 
@@ -1355,7 +1357,7 @@ class PyriProgramMainPanel(PyriWebUIBrowserPanelBase):
             step = program.steps.pop(index)
             program.steps.insert(index-1,step)
             
-            self.vue["$data"].program_steps = js.python_to_js(self._program_to_plain(program))
+            getattr(self.vue,"$data").program_steps = to_js2(self._program_to_plain(program))
             self.current_program = program
             self.highlighted_step_class = None
             self.highlighted_step_uuid = None
@@ -1370,7 +1372,7 @@ class PyriProgramMainPanel(PyriWebUIBrowserPanelBase):
             step = program.steps.pop(index)
             program.steps.insert(index+1,step)
             
-            self.vue["$data"].program_steps = js.python_to_js(self._program_to_plain(program))
+            getattr(self.vue,"$data").program_steps = to_js2(self._program_to_plain(program))
             self.current_program = program
             self.highlighted_step_class = None
             self.highlighted_step_uuid = None
@@ -1383,7 +1385,7 @@ class PyriProgramMainPanel(PyriWebUIBrowserPanelBase):
             program = self.current_program
             program.steps.pop(index)
             
-            self.vue["$data"].program_steps = js.python_to_js(self._program_to_plain(program))
+            getattr(self.vue,"$data").program_steps = to_js2(self._program_to_plain(program))
             self.current_program = program
             self.highlighted_step_class = None
             self.highlighted_step_uuid = None
@@ -1393,7 +1395,7 @@ class PyriProgramMainPanel(PyriWebUIBrowserPanelBase):
     def configure_step(self, index):
         try:
             self.fill_edit_step(index)
-            self.vue["$bvModal"].show("program_main_edit_step_modal")
+            getattr(self.vue,"$bvModal").show("program_main_edit_step_modal")
         except:
             traceback.print_exc()
 
@@ -1470,28 +1472,28 @@ class PyriProgramMainPanel(PyriWebUIBrowserPanelBase):
         name_regex = "^[a-zA-Z](?:\\w*[a-zA-Z0-9])?$"
         step_regex = r"^(\w+)\s+(?:(stop)|(next)|(error)|(?:(jump))\s+([a-zA-Z](?:\w*[a-zA-Z0-9])?))$"
         try:
-            step_name = self.vue["$data"].edit_step_name.strip()
+            step_name = getattr(self.vue,"$data").edit_step_name.strip()
             m = re.match(name_regex, step_name)
             if m is None:
                 js.alert(f"Invalid step name: {step_name}")
                 evt.preventDefault()
                 return
 
-            procedure_name = self.vue["$data"].edit_step_procedure_name.strip()
+            procedure_name = getattr(self.vue,"$data").edit_step_procedure_name.strip()
             m = re.match(name_regex, procedure_name)
             if m is None:
                 js.alert(f"Invalid procedure name: {procedure_name}")
                 evt.preventDefault()
                 return
 
-            procedure_args = self.vue["$data"].edit_step_procedure_args.strip().splitlines()
+            procedure_args = getattr(self.vue,"$data").edit_step_procedure_args.strip().splitlines()
             procedure_args = [s.strip() for s in procedure_args]
             if "" in procedure_args:
                 js.alert(f"Invalid procedure args: {', '.join(procedure_args)}")
                 evt.preventDefault()
                 return
 
-            next_steps = self.vue["$data"].edit_step_next_steps.strip().splitlines()
+            next_steps = getattr(self.vue,"$data").edit_step_next_steps.strip().splitlines()
             for p in next_steps:
                 m = re.match(step_regex, p)
                 if m is None:
@@ -1509,8 +1511,8 @@ class PyriProgramMainPanel(PyriWebUIBrowserPanelBase):
                         evt.preventDefault()
                         return
 
-            step_index = self.vue["$data"].edit_step_index
-            step_uuid = uuid.UUID(self.vue["$data"].edit_step_uuid)
+            step_index = getattr(self.vue,"$data").edit_step_index
+            step_uuid = uuid.UUID(getattr(self.vue,"$data").edit_step_uuid)
 
             client = self._get_client()
             uuid_util = UuidUtil(client_obj = client)
@@ -1560,7 +1562,7 @@ class PyriProgramMainPanel(PyriWebUIBrowserPanelBase):
                     self.current_program.name="main"
                 self.current_program.steps.append(step)
             
-            self.vue["$data"].program_steps = js.python_to_js(self._program_to_plain(self.current_program))
+            getattr(self.vue,"$data").program_steps = to_js2(self._program_to_plain(self.current_program))
             self.highlighted_step_class = None
             self.highlighted_step_uuid = None
 
@@ -1575,11 +1577,11 @@ class PyriProgramMainPanel(PyriWebUIBrowserPanelBase):
             except IndexError:
                 pass
         if step is not None:
-            self.vue["$data"].edit_step_name = step.step_name
-            self.vue["$data"].edit_step_uuid = str(_rr_uuid_to_py_uuid(step.step_id))
-            self.vue["$data"].edit_step_index = index
-            self.vue["$data"].edit_step_procedure_name = step.procedure_name
-            self.vue["$data"].edit_step_procedure_args = "\n".join(step.procedure_args)
+            getattr(self.vue,"$data").edit_step_name = step.step_name
+            getattr(self.vue,"$data").edit_step_uuid = str(_rr_uuid_to_py_uuid(step.step_id))
+            getattr(self.vue,"$data").edit_step_index = index
+            getattr(self.vue,"$data").edit_step_procedure_name = step.procedure_name
+            getattr(self.vue,"$data").edit_step_procedure_args = "\n".join(step.procedure_args)
             next_steps = []
             for n in step.next:
                 if n.op_code == 1:
@@ -1602,7 +1604,7 @@ class PyriProgramMainPanel(PyriWebUIBrowserPanelBase):
                 else:
                     next_steps.append(f"{n.result} error")
             
-            self.vue["$data"].edit_step_next_steps = "\n".join(next_steps)
+            getattr(self.vue,"$data").edit_step_next_steps = "\n".join(next_steps)
         else:
             new_ind = 0
             if self.current_program is not None:
@@ -1614,12 +1616,12 @@ class PyriProgramMainPanel(PyriWebUIBrowserPanelBase):
                         if ind1 > new_ind:
                             new_ind = ind1
 
-            self.vue["$data"].edit_step_name = f"step{new_ind+1}"
-            self.vue["$data"].edit_step_uuid = str(uuid.uuid4())
-            self.vue["$data"].edit_step_index = -1
-            self.vue["$data"].edit_step_procedure_name = "my_procedure"
-            self.vue["$data"].edit_step_procedure_args = ""
-            self.vue["$data"].edit_step_next_steps = "DEFAULT next\nERROR error"
+            getattr(self.vue,"$data").edit_step_name = f"step{new_ind+1}"
+            getattr(self.vue,"$data").edit_step_uuid = str(uuid.uuid4())
+            getattr(self.vue,"$data").edit_step_index = -1
+            getattr(self.vue,"$data").edit_step_procedure_name = "my_procedure"
+            getattr(self.vue,"$data").edit_step_procedure_args = ""
+            getattr(self.vue,"$data").edit_step_next_steps = "DEFAULT next\nERROR error"
 
 def _rr_uuid_to_py_uuid(rr_uuid):
     uuid_bytes = rr_uuid["uuid_bytes"].tobytes()
