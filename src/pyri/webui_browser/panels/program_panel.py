@@ -94,11 +94,30 @@ def gen_block_uid():
 def new_blockly_procedure(procedure_name, comment):
 
     block_id = gen_block_uid()
-    new_blockly= """<xml xmlns="https://developers.google.com/blockly/xml">
-    <block type="procedures_defnoreturn" id=\"""" + block_id + """\" x="20" y="20" deletable="false" movable="false" editable="true">
-      <field name="NAME">""" + procedure_name + """</field>
-      <comment pinned="false" h="80" w="160">""" + comment + """</comment>
-      <statement name="STACK"></statement></block></xml>"""
+    new_blockly = {
+        "blocks": {
+            "languageVersion": 0,
+            "blocks": [
+            {
+                "type": "procedures_defnoreturn",
+                "id": block_id,
+                "x": 20,
+                "y": 20,
+                "icons": {
+                "comment": {
+                    "text": comment,
+                    "pinned": False,
+                    "height": 80,
+                    "width": 160
+                }
+                },
+                "fields": {
+                "NAME": procedure_name
+                }
+            }
+            ]
+        }
+    }
     return new_blockly
 
 class PyriProcedureListPanel(PyriWebUIBrowserPanelBase):
@@ -240,7 +259,7 @@ class PyriProcedureListPanel(PyriWebUIBrowserPanelBase):
     async def do_new_blockly_procedure(self):
         try:
             procedure_name = js.prompt("New procedure name")
-            procedure_xml = new_blockly_procedure(procedure_name, "")
+            procedure_json = json.dumps(new_blockly_procedure(procedure_name, ""))
             variable_manager = self.device_manager.get_device_subscription("variable_storage").GetDefaultClient()
 
             var_consts = RRN.GetConstants('tech.pyri.variable_storage', variable_manager)
@@ -248,7 +267,7 @@ class PyriProcedureListPanel(PyriWebUIBrowserPanelBase):
             variable_protection_level = var_consts["VariableProtectionLevel"]
 
             await variable_manager.async_add_variable2("procedure", procedure_name ,"string", \
-            RR.VarValue(procedure_xml,"string"), ["blockly"], {}, variable_persistence["const"], None, variable_protection_level["read_write"], \
+            RR.VarValue(procedure_json,"string"), ["blockly"], {}, variable_persistence["const"], None, variable_protection_level["read_write"], \
                 [], "User defined procedure", False, None)
 
             p = PyriBlocklyProgramPanel(procedure_name,self.core,self.device_manager)
@@ -855,7 +874,7 @@ class PyriBlocklyProgramPanel(PyriWebUIBrowserPanelBase):
                 assert delay_count < 100
                 await RRN.AsyncSleep(0.1,None)
 
-            iframe.setBlocklyXml(procedure_src.data)
+            iframe.setBlocklyJsonText(procedure_src.data)
         except:
             traceback.print_exc()
 
@@ -863,12 +882,12 @@ class PyriBlocklyProgramPanel(PyriWebUIBrowserPanelBase):
         iframe = self.core.layout.layout.root.getItemsById(f"procedure_blockly_{self.procedure_name}")[0]\
                 .element.find("#procedure_blockly_iframe")[0].contentWindow
 
-        blockly_xml = iframe.getBlocklyXml()
+        blockly_json = iframe.getBlocklyJsonText()
 
         async def s():
             try:
                 variable_manager = self.device_manager.get_device_subscription("variable_storage").GetDefaultClient()
-                await variable_manager.async_setf_variable_value("procedure",self.procedure_name,RR.VarValue(blockly_xml,"string"),None)
+                await variable_manager.async_setf_variable_value("procedure",self.procedure_name,RR.VarValue(blockly_json,"string"),None)
             except:
                 traceback.print_exc()
         
