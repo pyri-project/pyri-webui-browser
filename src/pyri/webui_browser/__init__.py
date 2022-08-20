@@ -7,6 +7,7 @@ from pyri.device_manager_client import DeviceManagerClient
 import traceback
 from pyri.util.robotraconteur import robotraconteur_data_to_plain
 import jinja2
+from.js_loader import JsLoader
 
 
 def fill_rr_url_template(url):
@@ -31,6 +32,8 @@ class PyriWebUIBrowser:
 
         self._device_infos = dict()
         self._device_infos_update_running = False
+
+        self.js_loader = JsLoader()
         
         def set_devices_states(state, devices_states):
             state.devices_states = devices_states
