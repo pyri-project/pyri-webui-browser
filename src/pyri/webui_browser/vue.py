@@ -127,12 +127,14 @@ def _vue_get_computed(vue_class: type):
 
 
 class Vue:
-    def __init__(self, el: Union["js.JsProxy",str] = None, components: Dict[str,"js.JsProxy"] = {}):
+    def __init__(self, el: Union["js.JsProxy",str] = None):
         if self._vue_class is None:
             vue_methods = _vue_get_methods(type(self))
             vue_data = _vue_get_data(type(self))
             vue_computed = _vue_get_computed(type(self))
             print(f"vue_computed: {vue_computed}")
+
+            components = type(self).vue_components
 
             components_vue = {k: v._vue_class for k,v in components.items()}
 
@@ -201,18 +203,32 @@ class Vue:
         return getattr(self.vue,"$on")
 
     @property
-    def ref(self):
-        return getattr(self.vue,"$ref")
+    def refs(self):
+        return getattr(self.vue,"$refs")
+
+    def get_ref_pyobj(self, ref_name):
+        return getattr(getattr(self.refs,ref_name),"$data").py_obj
 
     @property
     def bvModal(self):
         return getattr(self.vue,"$bvModal")
+
+    def next_tick(self):
+        return getattr(self.vue,"$nextTick")()
+
+    vue_template = None
+
+    vue_components = {}
 
 def VueComponent(vue_py_class):
     vue_methods = _vue_get_methods(vue_py_class)
     vue_data = _vue_get_data(vue_py_class)
     vue_props = _vue_get_props(vue_py_class)
     vue_computed = _vue_get_computed(vue_py_class)
+
+    components = vue_py_class.vue_components
+
+    vue_components = {k: v._vue_class for k,v in components.items()}
     
     def component_created(js_this):
         py_obj = vue_py_class()
@@ -230,7 +246,8 @@ def VueComponent(vue_py_class):
             "beforeMount": _vue_method_proxy(vue_py_class.before_mount),
             "mounted": _vue_method_proxy(vue_py_class.mounted),
             "beforeDestroy": _vue_method_proxy(vue_py_class.before_destroy),
-            "computed": to_js2(vue_computed)
+            "computed": to_js2(vue_computed),
+            "components": to_js2(vue_components)
             
         })
     )
