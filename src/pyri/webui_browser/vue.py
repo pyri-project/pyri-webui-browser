@@ -31,6 +31,18 @@ def vue_computed(fn, vue_computed_name = None):
     fn._vue_computed = vue_computed_name
     return fn
 
+def vue_watch(vue_watch_property, vue_watch_deep = None, vue_watch_immediate = None, vue_watch_flush = None):
+    def vue_watch_inner(fn):
+        fn._vue_watch_property = vue_watch_property
+        if vue_watch_deep is not None:
+            fn._vue_watch_deep = vue_watch_deep
+        if vue_watch_immediate is not None:
+            fn._vue_watch_immediate = vue_watch_immediate
+        if vue_watch_flush is not None:
+            fn._vue_watch_flush = vue_watch_flush
+        return fn
+    return vue_watch_inner
+
 class vue_data():
     def __init__(self, init_value = None):
         self._vue_data = None
@@ -125,6 +137,21 @@ def _vue_get_computed(vue_class: type):
             methods[a1._vue_computed] = _vue_method_proxy(a1)
     return methods
 
+def _vue_get_watch(vue_class: type):
+    watch = {}
+    for a in dir(vue_class):
+        a1 = getattr(vue_class, a)
+        if hasattr(a1,"_vue_watch_property"):
+            w = { "handler": _vue_method_proxy(a1) }
+            if hasattr(a1,"_vue_watch_deep"):
+                w["deep"] = a1._vue_watch_deep
+            if hasattr(a1,"_vue_watch_immediate"):
+                w["immediate"] = a1._vue_watch_immediate
+            if hasattr(a1,"_vue_watch_flush"):
+                w["flush"] = a1._vue_watch_flush
+            watch[a1._vue_watch_property] = w
+    return watch
+
 
 class Vue:
     def __init__(self, el: Union["js.JsProxy",str] = None):
@@ -132,7 +159,7 @@ class Vue:
             vue_methods = _vue_get_methods(type(self))
             vue_data = _vue_get_data(type(self))
             vue_computed = _vue_get_computed(type(self))
-            print(f"vue_computed: {vue_computed}")
+            vue_watch = _vue_get_watch(type(self))            
 
             components = type(self).vue_components
 
@@ -148,7 +175,8 @@ class Vue:
                     "beforeMount": _vue_method_proxy(type(self).before_mount),
                     "mounted": _vue_method_proxy(type(self).mounted),
                     "beforeDestray": _vue_method_proxy(type(self).before_destroy),
-                    "computed": to_js2(vue_computed)
+                    "computed": to_js2(vue_computed),
+                    "watch": to_js2(vue_watch)
                 })
             )
 
@@ -216,6 +244,10 @@ class Vue:
     def next_tick(self):
         return getattr(self.vue,"$nextTick")()
 
+    @property
+    def watch(self):
+        return getattr(self.vue,"$watch")
+
     vue_template = None
 
     vue_components = {}
@@ -225,6 +257,7 @@ def VueComponent(vue_py_class):
     vue_data = _vue_get_data(vue_py_class)
     vue_props = _vue_get_props(vue_py_class)
     vue_computed = _vue_get_computed(vue_py_class)
+    vue_watch = _vue_get_watch(vue_py_class)
 
     components = vue_py_class.vue_components
 
@@ -247,7 +280,8 @@ def VueComponent(vue_py_class):
             "mounted": _vue_method_proxy(vue_py_class.mounted),
             "beforeDestroy": _vue_method_proxy(vue_py_class.before_destroy),
             "computed": to_js2(vue_computed),
-            "components": to_js2(vue_components)
+            "components": to_js2(vue_components),
+            "watch": to_js2(vue_watch)
             
         })
     )

@@ -1,4 +1,4 @@
-from .vue import Vue, VueComponent, vue_method, vue_data, vue_prop, vue_computed
+from .vue import Vue, VueComponent, vue_method, vue_data, vue_prop, vue_computed,vue_watch
 from typing import Dict, Any, Callable, Union
 from . import PyriWebUIBrowser
 import js
