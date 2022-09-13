@@ -1,5 +1,4 @@
 from typing import Dict, Any
-from .golden_layout import PyriGoldenLayout
 from .plugins.panel import get_all_webui_browser_panels_infos, add_webui_browser_panel
 import js
 from RobotRaconteur.Client import *
@@ -8,6 +7,9 @@ import traceback
 from pyri.util.robotraconteur import robotraconteur_data_to_plain
 import jinja2
 from.js_loader import JsLoader
+import importlib_resources
+from .util import to_js2
+import time
 
 
 def fill_rr_url_template(url):
@@ -22,7 +24,7 @@ class PyriWebUIBrowser:
     def __init__(self, loop: "RobotRaconteur.WebLoop", config: Dict[str,Any]):
         self._loop = loop
         self._config = config
-        self._layout = PyriGoldenLayout(self)
+        self._layout = None
         self._seqno = 0
         self._device_manager = DeviceManagerClient(fill_rr_url_template(config["device_manager_url"]),autoconnect=False,tcp_ipv4_only=True)
         self._devices_states_obj_sub = None
@@ -34,6 +36,8 @@ class PyriWebUIBrowser:
         self._device_infos_update_running = False
 
         self.js_loader = JsLoader()
+
+        self._vue_core = None
         
         def set_devices_states(state, devices_states):
             state.devices_states = devices_states
@@ -73,6 +77,7 @@ class PyriWebUIBrowser:
         return self._device_manager
 
     async def load_plugin_panels(self):
+        return
         all_panels_u = get_all_webui_browser_panels_infos()
         all_panels = dict()
         for u in all_panels_u.values():
@@ -87,8 +92,17 @@ class PyriWebUIBrowser:
         try:
             print("Running PyRI WebUI Browser")
 
+            from .core_app_vue import PyriWebUICoreAppVue
+            self._vue_core = PyriWebUICoreAppVue(self, "#pyri-webui-browser-app")
+
+            from . import golden_layout
+
+            await self._vue_core.add_component("pyri-golden-layout", "pyri-golden-layout")
+            js.console.log(self._vue_core.vue)
+
+            return
+
             self._layout.init_golden_layout()
-            js.jQuery.find("#menuContainer")[0].removeAttribute('hidden')
 
             await self.load_plugin_panels()
 
@@ -208,4 +222,4 @@ class PyriWebUIBrowser:
 
         finally:
             self._device_infos_update_running = False
-
+        

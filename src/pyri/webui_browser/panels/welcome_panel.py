@@ -6,55 +6,16 @@ import js
 from RobotRaconteur.Client import *
 import traceback
 from ..util import to_js2
-from pyodide import create_proxy, to_js
+from pyodide import create_proxy, to_js2
+from ..pyri_vue import PyriVue, VueComponent
 
-class PyriWelcomePanel(PyriWebUIBrowserPanelBase):
+@VueComponent
+class PyriWelcomePanel(PyriVue):
 
-    def __init__(self,core):
-        self.vue = None
-        self.core = core
+    vue_template = importlib_resources.read_text(__package__,"welcome_panel.html")
 
-    def init_vue(self, vue):
-        self.vue =vue
-        getattr(self.vue,"$data").count=20
-
-    
-    def increment(self,  evt):
-        print(int(evt.target.getAttribute("data-joint")))
-        getattr(self.vue,"$data").count+=1
-
-    
-    def decrement(self, evt):
-        print(int(evt.target.getAttribute("data-joint")))
-        getattr(self.vue,"$data").count-=1
-
-    
-    async def run(self):
-        return
-        last_seqno = -1
-        last_devices = set()
-        while True:
-            try:
-                devices_states = self.core.devices_states
-                if devices_states is not None:
-                    new_seqno = self.core.devices_states.seqno
-                    if new_seqno != last_seqno:
-                        getattr(self.vue,"$data").seqno = new_seqno
-                        last_seqno = new_seqno
-            except:
-                traceback.print_exc()
-                getattr(self.vue,"$data").seqno = -1
-            try:
-                new_devices = self.core.active_device_names
-                if set(new_devices) != last_devices:
-                    getattr(self.vue,"$data").active_device_names = new_devices
-                    last_devices = set(new_devices)
-            except:
-                traceback.print_exc()
-                getattr(self.vue,"$data").active_device_names = []
-            await RRN.AsyncSleep(0.05,None)
-        
-        
+    def __init__(self):
+        super().__init__()
 
 async def add_welcome_panel(panel_type: str, core: PyriWebUIBrowser, parent_element: Any):
     assert panel_type == "welcome"

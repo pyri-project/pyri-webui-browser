@@ -1,0 +1,4 @@
+<div>
+<component v-for="(core_component, index) in core_components" :is="core_component.component_type" 
+    :ref="core_component.component_ref" :info="core_component.component_info" :key="core_component.component_ref"/>
+</div>

@@ -1442,11 +1442,12 @@ class PyriProgramMainPanel(PyriWebUIBrowserPanelBase):
             try:
                 try:
                     program_master_state = None
-                    e_state = self.core.devices_states.devices_states["program_master"].state
-                    if e_state is not None:
-                        for e in e_state:
-                            if e.type == "tech.pyri.program_master.PyriProgramState":
-                                program_master_state = e.state_data.data
+                    if self.core.devices_states is not None:
+                        e_state = self.core.devices_states.devices_states["program_master"].state
+                        if e_state is not None:
+                            for e in e_state:
+                                if e.type == "tech.pyri.program_master.PyriProgramState":
+                                    program_master_state = e.state_data.data
                 except KeyError:
                     traceback.print_exc()
                 else:

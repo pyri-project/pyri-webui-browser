@@ -10,14 +10,7 @@ import sys
 def to_js2(val):
     return to_js(val,dict_converter=js.Object.fromEntries)
 
-_wrap_js_this = run_js("""(function () {
-                                return function (fn)
-                                {
-                                    return (function (...args){
-                                        return fn(this,...args);
-                                    })
-                                }
-                            })()""")
+_wrap_js_this = js.Function.new("fn", "return (function (...args) { return fn(this,...args); })")
 
 def vue_method(fn, vue_method_name = None):
     if vue_method_name is None:
@@ -155,6 +148,8 @@ def _vue_get_watch(vue_class: type):
 
 class Vue:
     def __init__(self, el: Union["js.JsProxy",str] = None):
+        self._mounted = False
+        self._mount_futures = []
         if self._vue_class is None:
             vue_methods = _vue_get_methods(type(self))
             vue_data = _vue_get_data(type(self))
@@ -165,8 +160,7 @@ class Vue:
 
             components_vue = {k: v._vue_class for k,v in components.items()}
 
-            self._vue = js.Vue.new(to_js2(
-                {
+            vue_options = {
                     "el": el,
                     "components": to_js2(components_vue),
                     "data": to_js2(vue_data),
@@ -177,8 +171,13 @@ class Vue:
                     "beforeDestray": _vue_method_proxy(type(self).before_destroy),
                     "computed": to_js2(vue_computed),
                     "watch": to_js2(vue_watch)
-                })
-            )
+                }
+
+            vue_template = getattr(type(self), "vue_template", None)
+            if vue_template:
+                vue_options["template"] = vue_template
+
+            self._vue = js.Vue.new(to_js2(vue_options))
 
             getattr(self.vue,"$data").py_obj = self
 
@@ -217,7 +216,11 @@ class Vue:
         pass
 
     def mounted(self):
-        pass
+        for f in self._mount_futures:
+            try:
+                asyncio.get_event_loop().call_soon(lambda: f.set_result(None))
+            except: 
+                traceback.print_exc()
 
     def before_destroy(self):
         pass
@@ -234,8 +237,11 @@ class Vue:
     def refs(self):
         return getattr(self.vue,"$refs")
 
-    def get_ref_pyobj(self, ref_name):
-        return getattr(getattr(self.refs,ref_name),"$data").py_obj
+    def get_ref_pyobj(self, ref_name, index = None):
+        ref1 = getattr(self.refs,ref_name)
+        if index is not None:
+            ref1 = ref1[index]
+        return getattr(ref1,"$data").py_obj
 
     @property
     def bvModal(self):
@@ -252,7 +258,36 @@ class Vue:
 
     vue_components = {}
 
-def VueComponent(vue_py_class):
+    async def wait_mounted(self, timeout = 2.5):
+
+        if self._mounted:
+            return
+        
+        f = asyncio.Future()
+        try:
+            self._mount_futures.append(f)
+            await asyncio.wait_for(f,timeout)
+        finally:
+            self._mount_futures.remove(f)
+
+
+# https://stackoverflow.com/questions/3888158/making-decorators-with-optional-arguments#comment65959042_24617244
+def _optional_arg_decorator(fn):
+    def wrapped_decorator(*args, **kwargs):
+        if len(args) == 1 and callable(args[0]) and len(kwargs) == 0:
+            return fn(args[0])
+
+        else:
+            def real_decorator(decoratee):
+                return fn(decoratee, *args, **kwargs)
+
+            return real_decorator
+
+    return wrapped_decorator
+
+
+@_optional_arg_decorator
+def VueComponent(vue_py_class, register = None):
     vue_methods = _vue_get_methods(vue_py_class)
     vue_data = _vue_get_data(vue_py_class)
     vue_props = _vue_get_props(vue_py_class)
@@ -285,6 +320,9 @@ def VueComponent(vue_py_class):
             
         })
     )
+
+    if register is not None:
+        js.Vue.component(register, vue_py_class._vue_class)
 
     return vue_py_class
 
