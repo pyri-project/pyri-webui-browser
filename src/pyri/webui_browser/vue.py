@@ -6,6 +6,7 @@ from pyodide import create_once_callable, create_proxy, to_js, run_js
 import inspect
 import traceback
 import sys
+import time
 
 def to_js2(val):
     return to_js(val,dict_converter=js.Object.fromEntries)
@@ -243,6 +244,21 @@ class Vue:
             ref1 = ref1[index]
         return getattr(ref1,"$data").py_obj
 
+    async def get_ref_pyobj_wait(self, ref_name, index = None, timeout = 2.5):
+        t1 = time.time()
+
+        while True:
+            if time.time() - t1 > timeout:
+                raise TimeoutError(f"Timed out waiting for component {ref_name} to mount")
+
+            try:
+                return self.get_ref_pyobj(ref_name, index)
+            except AttributeError:
+                #traceback.print_exc()
+                pass
+
+            await self.next_tick()
+
     @property
     def bvModal(self):
         return getattr(self.vue,"$bvModal")
@@ -253,6 +269,10 @@ class Vue:
     @property
     def watch(self):
         return getattr(self.vue,"$watch")
+
+    @property
+    def el(self):
+        return getattr(self.vue, "$el")
 
     vue_template = None
 
@@ -271,23 +291,7 @@ class Vue:
             self._mount_futures.remove(f)
 
 
-# https://stackoverflow.com/questions/3888158/making-decorators-with-optional-arguments#comment65959042_24617244
-def _optional_arg_decorator(fn):
-    def wrapped_decorator(*args, **kwargs):
-        if len(args) == 1 and callable(args[0]) and len(kwargs) == 0:
-            return fn(args[0])
-
-        else:
-            def real_decorator(decoratee):
-                return fn(decoratee, *args, **kwargs)
-
-            return real_decorator
-
-    return wrapped_decorator
-
-
-@_optional_arg_decorator
-def VueComponent(vue_py_class, register = None):
+def VueComponent(vue_py_class):
     vue_methods = _vue_get_methods(vue_py_class)
     vue_data = _vue_get_data(vue_py_class)
     vue_props = _vue_get_props(vue_py_class)
@@ -321,8 +325,8 @@ def VueComponent(vue_py_class, register = None):
         })
     )
 
-    if register is not None:
-        js.Vue.component(register, vue_py_class._vue_class)
-
     return vue_py_class
 
+
+def vue_register_component(component_name, component_type):
+    js.Vue.component(component_name, component_type._vue_class)

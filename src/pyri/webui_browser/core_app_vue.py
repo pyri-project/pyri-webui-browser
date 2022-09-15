@@ -25,18 +25,4 @@ class PyriWebUICoreAppVue(PyriVue):
         else:
             self.core_components.splice(component_index, 0, component_dict)
 
-        js.console.log(self.core_components)
-
-        t1 = time.time()
-
-        while True:
-            if time.time() - t1 > timeout:
-                raise TimeoutError(f"Timed out waiting for component {component_ref} to mount")
-
-            try:
-                return self.get_ref_pyobj(component_ref, 0)
-            except AttributeError:
-                #traceback.print_exc()
-                pass
-
-            await self.next_tick()
+        return await self.get_ref_pyobj_wait(component_ref, index = 0, timeout = timeout)

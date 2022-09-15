@@ -61,7 +61,10 @@ class PyriWebUIBrowser:
 
     def create_task(self, task):
         async def create_task_w():
-            await task
+            try:
+                await task
+            except:
+                traceback.print_exc()
         self._loop.create_task(create_task_w())
 
     @property
@@ -96,9 +99,26 @@ class PyriWebUIBrowser:
             self._vue_core = PyriWebUICoreAppVue(self, "#pyri-webui-browser-app")
 
             from . import golden_layout
+            golden_layout.register_vue_components()
 
             await self._vue_core.add_component("pyri-golden-layout", "pyri-golden-layout")
-            js.console.log(self._vue_core.vue)
+            self._layout = await self._vue_core.get_ref_pyobj_wait("pyri-golden-layout", index = 0)
+            print(f"layout: {self._layout}")
+
+            from .panels import welcome_panel
+            welcome_panel.register_vue_components()
+
+            welcome_config = golden_layout.PyriGoldenLayoutPanelConfig(
+                "pyri-welcome", "welcome", "Welcome", True, False, False
+            )
+
+            await self._layout.add_panel(welcome_config)
+
+            welcome_config2 = golden_layout.PyriGoldenLayoutPanelConfig(
+                "pyri-welcome", "welcome2", "Welcome 2", True, False, False
+            )
+
+            await self._layout.add_panel(welcome_config2)
 
             return
 
