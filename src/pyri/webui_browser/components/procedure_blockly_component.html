@@ -4,5 +4,5 @@
         <b-button variant="success" @click="run"><i class="fa fa-play"></i> Run</b-button>
         <b-button variant="danger" @click="stop_all"><i class="fa fa-stop"></i> Stop All</b-button>
     </div>
-    <iframe src="pyri_blockly_workspace.html" id="procedure_blockly_iframe" @load="iframe_load" style="flex: 1; width: 100%"></iframe>
+    <iframe src="pyri_blockly_workspace.html" ref="procedure_blockly_iframe" @load="iframe_load" style="flex: 1; width: 100%"></iframe>
 </div>

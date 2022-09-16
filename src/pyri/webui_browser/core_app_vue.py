@@ -11,7 +11,7 @@ class PyriWebUICoreAppVue(PyriVue):
 
     vue_template = importlib_resources.read_text(__package__,"pyri_core_app.html")
 
-    core_components = vue_data(to_js2([]))
+    core_components = vue_data([])
 
     async def add_component(self, component_type, component_ref, component_info = {}, component_index = -1, timeout = 2.5):
         component_dict = to_js2({

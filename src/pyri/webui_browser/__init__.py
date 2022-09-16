@@ -1,5 +1,6 @@
 from typing import Dict, Any
-from .plugins.panel import get_all_webui_browser_panels_infos, add_webui_browser_panel
+from .plugins.panel import get_all_webui_browser_panels_infos, get_all_webui_default_browser_panels
+from .plugins.component import register_all_webui_browser_components
 import js
 from RobotRaconteur.Client import *
 from pyri.device_manager_client import DeviceManagerClient
@@ -79,17 +80,14 @@ class PyriWebUIBrowser:
     def device_manager(self):
         return self._device_manager
 
-    async def load_plugin_panels(self):
-        return
-        all_panels_u = get_all_webui_browser_panels_infos()
-        all_panels = dict()
-        for u in all_panels_u.values():
-            all_panels.update(u)
+    def register_plugin_components(self):
+        register_all_webui_browser_components()
 
-        all_panels_sorted = sorted(all_panels.values(), key=lambda x: x.priority)
-
-        for p in all_panels_sorted:
-            await add_webui_browser_panel(p.panel_type, self, self._layout.layout_container)
+    async def load_plugin_default_panels(self, layout_config = "default"):
+    
+        default_panels = get_all_webui_default_browser_panels()
+        for _, panel_config in default_panels:
+            await self.layout.add_panel(panel_config)
 
     async def run(self):
         try:
@@ -98,33 +96,15 @@ class PyriWebUIBrowser:
             from .core_app_vue import PyriWebUICoreAppVue
             self._vue_core = PyriWebUICoreAppVue(self, "#pyri-webui-browser-app")
 
+            self.register_plugin_components()
+
             from . import golden_layout
             golden_layout.register_vue_components()
 
             await self._vue_core.add_component("pyri-golden-layout", "pyri-golden-layout")
             self._layout = await self._vue_core.get_ref_pyobj_wait("pyri-golden-layout", index = 0)
-            print(f"layout: {self._layout}")
 
-            from .panels import welcome_panel
-            welcome_panel.register_vue_components()
-
-            welcome_config = golden_layout.PyriGoldenLayoutPanelConfig(
-                "pyri-welcome", "welcome", "Welcome", True, False, False
-            )
-
-            await self._layout.add_panel(welcome_config)
-
-            welcome_config2 = golden_layout.PyriGoldenLayoutPanelConfig(
-                "pyri-welcome", "welcome2", "Welcome 2", True, False, False
-            )
-
-            await self._layout.add_panel(welcome_config2)
-
-            return
-
-            self._layout.init_golden_layout()
-
-            await self.load_plugin_panels()
+            await self.load_plugin_default_panels("default")
 
             for i in range(100):
                 if i > 50:
@@ -143,8 +123,10 @@ class PyriWebUIBrowser:
             self._devices_states_obj_sub = self._device_manager.get_device_subscription("devices_states")
             
             # Run infinite update loop
-
-            self._layout.select_panel("welcome")
+            try:
+                await self._layout.select_panel("welcome")
+            except:
+                pass
 
             while True:
                 await RRN.AsyncSleep(0.1,None)

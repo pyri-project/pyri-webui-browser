@@ -68,3 +68,7 @@ class PyriVue(Vue):
         if timeout2 < 0:
             timeout2 = 0
         return await ref_py_obj.wait_core(timeout2)
+
+    @property
+    def bv_toast(self):
+        return getattr(self.vue, "$bvToast")

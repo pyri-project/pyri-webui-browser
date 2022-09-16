@@ -53,8 +53,6 @@ class PyriGoldenLayoutPanelConfig(NamedTuple):
     component_type: str
     panel_id: str
     panel_title: str
-    scroll_y: bool = False
-    scroll_x: bool = False
     closeable: bool = False
     component_info: Dict = {}
     default_parent: str = "root"
@@ -64,7 +62,8 @@ _gl_template = """
     <div ref="goldenlayout_root" style="position: absolute; width: 100%; height: 100%">
     </div>
     <div v-for="panel in panels" :ref="'goldenlayout_vue_panel_wrapper_' + panel.panel_id" style="overflow: none">
-      <component :is="panel.component_type" :key="panel.panel_id"  :ref="'goldenlayout_vue_panel_component_' + panel.panel_id"/>
+      <component :is="panel.component_type" :key="panel.panel_id"  :ref="'goldenlayout_vue_panel_component_' + panel.panel_id" 
+      :component_info="panel.component_info"/>
     </div>
 </div>
 """
@@ -76,9 +75,9 @@ class PyriGoldenLayout(PyriVue):
 
     vue_template = _gl_template
 
-    info = vue_prop()
+    component_info = vue_prop()
 
-    panels = vue_data([])
+    panels = vue_data(lambda: [])
 
     def __init__(self):
         super().__init__()
@@ -132,10 +131,7 @@ class PyriGoldenLayout(PyriVue):
             traceback.print_exc()
         
     def _bind_component_event_listener(self, container, item_config):
-        print("_bind_component_event_handler")
-        js.console.log(container)
-        js.console.log(item_config)
-
+        
         #el = self.get_panel_pyobj(container.state.panel_id).el
 
         container.virtualRectingRequiredEvent = create_proxy(self._handle_container_virtual_recting_requiredEvent)
@@ -215,13 +211,11 @@ class PyriGoldenLayout(PyriVue):
             await self.next_tick()
             await self.next_tick()
 
-            js.console.log(self.refs)
-
             panel_pyobj = await self.get_panel_pyobj_wait(panel_config.panel_id)
 
             component_item_config = {
                 "type": "component",
-                "isClosable": False,
+                "isClosable": panel_config.closeable,
                 "content": [],
                 "id": panel_config.panel_id,
                 "title": panel_config.panel_title,

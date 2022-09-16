@@ -6,7 +6,7 @@ from ..pyri_vue import PyriVue, VueComponent, vue_register_component
 @VueComponent
 class PyriWelcomePanel(PyriVue):
 
-    vue_template = importlib_resources.read_text(__package__,"welcome_panel.html")
+    vue_template = importlib_resources.read_text(__package__,"welcome_component.html")
 
     def __init__(self):
         super().__init__()

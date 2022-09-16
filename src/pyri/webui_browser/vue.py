@@ -1,4 +1,5 @@
 import asyncio
+from mimetypes import init
 from typing import Dict, Any, Callable, Union
 import js
 
@@ -81,7 +82,8 @@ def _vue_method_proxy(fn):
                     await res
                 except BaseException as exp:
                     py_obj._vue_handle_async_exception(exp)
-            return py_obj._vue_create_task(run_async_method())
+            py_obj._vue_create_task(run_async_method())
+            return None
         else:
             return res
 
@@ -106,8 +108,14 @@ def _vue_get_data(vue_class: type):
     def _new_data(*args):
         ret = {}
         for k,v in data.items():
-            if inspect.isfunction(v):
-                ret[k] = v._init_value(*args)
+            if inspect.isfunction(v._init_value):
+                init_value_arg_spec = inspect.getfullargspec(v._init_value)
+                if init_value_arg_spec.varargs is not None:
+                    ret[k] = v._init_value(*args)
+                elif len(init_value_arg_spec.args) > 0:
+                    ret[k] = v._init_value(*(args[0:len(init_value_arg_spec.args)]))
+                else:
+                     ret[k] = v._init_value()                
             else:
                 ret[k] = v._init_value
         ret["py_obj"] = None
@@ -260,7 +268,7 @@ class Vue:
             await self.next_tick()
 
     @property
-    def bvModal(self):
+    def bv_modal(self):
         return getattr(self.vue,"$bvModal")
 
     def next_tick(self):
@@ -300,7 +308,12 @@ def VueComponent(vue_py_class):
 
     components = vue_py_class.vue_components
 
-    vue_components = {k: v._vue_class for k,v in components.items()}
+    vue_components = dict()
+    for k,v in components.items():
+        if hasattr(v, "_vue_class"):
+            vue_components[k] = v._vue_class
+        else:
+            vue_components[k] = v
     
     def component_created(js_this):
         py_obj = vue_py_class()
