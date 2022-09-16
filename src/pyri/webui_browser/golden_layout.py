@@ -86,10 +86,8 @@ class PyriGoldenLayout(PyriVue):
         self._gl_bounding_client_rect = None
 
     def mounted(self):
-        print("golden layout mounted")
         super().mounted()
         
-        js.console.log(self.refs)
         layoutContainer = self.refs.goldenlayout_root
         self._layout =js.goldenLayout.VirtualLayout.new(
             layoutContainer,
@@ -141,8 +139,6 @@ class PyriGoldenLayout(PyriVue):
         return to_js2({"component": {}, "virtual": True })
 
     def _unbind_component_event_listener(self, container):
-        print("_unbind_component_event_handler")
-        js.console.log(container)
 
         panel_id = container.state.panel_id
 
@@ -206,7 +202,6 @@ class PyriGoldenLayout(PyriVue):
             panels = self.panels
 
             panels.push(to_js2(panel_config._asdict()))
-            js.console.log(panels)
 
             await self.next_tick()
             await self.next_tick()
