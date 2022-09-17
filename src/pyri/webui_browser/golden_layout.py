@@ -58,7 +58,7 @@ class PyriGoldenLayoutPanelConfig(NamedTuple):
     default_parent: str = "root"
 
 _gl_template = """
-<div>
+<div class="v-100 h-100">
     <div ref="goldenlayout_root" style="position: absolute; width: 100%; height: 100%">
     </div>
     <div v-for="panel in panels" :ref="'goldenlayout_vue_panel_wrapper_' + panel.panel_id" style="overflow: none">

@@ -14,17 +14,28 @@ def to_js2(val):
 
 _wrap_js_this = js.Function.new("fn", "return (function (...args) { return fn(this,...args); })")
 
-def vue_method(fn, vue_method_name = None):
-    if vue_method_name is None:
-        vue_method_name = fn.__name__
-    fn._vue_method = vue_method_name
-    return fn
+def vue_method(fn = None, *, vue_method_name = None):
+    assert fn or vue_method_name
+    if fn:
+        fn._vue_method = fn.__name__
+        return fn
+    else:
+        def _vue_method_inner(fn):
+            fn._vue_method = vue_method_name
+            return fn
+        return _vue_method_inner
 
-def vue_computed(fn, vue_computed_name = None):
-    if vue_computed_name is None:
-        vue_computed_name = fn.__name__
-    fn._vue_computed = vue_computed_name
-    return fn
+def vue_computed(fn = None, *, vue_computed_name = None):
+    assert fn or vue_computed_name
+    if fn:
+        fn._vue_computed = fn.__name__
+        return fn
+    else:
+        def _vue_computed_inner(fn):
+            fn._vue_computed = vue_computed_name
+            return fn
+        return _vue_computed_inner
+    
 
 def vue_watch(vue_watch_property, vue_watch_deep = None, vue_watch_immediate = None, vue_watch_flush = None):
     def vue_watch_inner(fn):
