@@ -1,6 +1,7 @@
 from typing import Dict, Any
 from .plugins.panel import get_all_webui_browser_panels_infos, get_all_webui_default_browser_panels
 from .plugins.component import register_all_webui_browser_components
+from .plugins.plugin_init import plugin_init_all_webui_plugins
 import js
 from RobotRaconteur.Client import *
 from pyri.device_manager_client import DeviceManagerClient
@@ -83,6 +84,9 @@ class PyriWebUIBrowser:
     def register_plugin_components(self):
         register_all_webui_browser_components()
 
+    async def init_plugins(self):
+        await plugin_init_all_webui_plugins(self)
+
     async def load_plugin_default_panels(self, layout_config = "default"):
     
         default_panels = get_all_webui_default_browser_panels()
@@ -92,6 +96,8 @@ class PyriWebUIBrowser:
     async def run(self):
         try:
             print("Running PyRI WebUI Browser")
+
+            await self.init_plugins()
 
             from .core_app_vue import PyriWebUICoreAppVue
             self._vue_core = PyriWebUICoreAppVue(self, "#pyri-webui-browser-app")
