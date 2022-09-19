@@ -14,12 +14,10 @@ class JsLoader:
         fut = asyncio.Future()
 
         def onload(evt):
-            print(f"jsloader onload {evt}")
             fut.set_result(True)
 
         def onerror(evt):
-            print(f"jsloader onerror {evt.message}")
-            fut.set_exception(Exception(evt.message))
+            fut.set_exception(Exception(f"Could not load script {script_url}"))
 
         if script_url.endswith(".css"):
             script = js.document.createElement('link')
