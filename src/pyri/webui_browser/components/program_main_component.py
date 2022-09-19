@@ -34,7 +34,8 @@ class PyriProgramMainComponent(PyriVue):
     def core_ready(self):
         super().core_ready()
 
-        self.core.create_task(self.reload())
+        # TODO: initial reload
+        #self.core.create_task(self.reload())
         self.core.create_task(self.run())
          
     def _get_client(self):
