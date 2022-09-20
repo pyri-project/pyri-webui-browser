@@ -30,11 +30,14 @@ class PyriTerminalOutputComponent(PyriVue):
         output_lines_js = self.output_lines
         for l in output_lines:
             if not isinstance(l, tuple):
-                output_lines_js.push(str(l))
+                output_lines_js.push(to_js2({
+                    "text": str(l),
+                    "text_class": ""
+                }))
             else:
                  output_lines_js.push(to_js2({
             "text": l[0],
-            "text_class": l[1] or ""
+            "text_class": l[1] if len(l) > 1 else ""
         }))
         #self.output_lines = output_lines_js
 
