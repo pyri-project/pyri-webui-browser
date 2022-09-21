@@ -97,6 +97,9 @@ class PyriWebUIBrowser:
         try:
             print("Running PyRI WebUI Browser")
 
+            #Prevent navigation away from page
+            js.window.onbeforeunload = js.Function.new("return \"\"")
+
             await self.init_plugins()
 
             from .core_app_vue import PyriWebUICoreAppVue

@@ -23,5 +23,6 @@ setup(
     entry_points = {
         'pyri.plugins.webui_browser_panel': ['pyri-webui-browser=pyri.webui_browser.panels.standard_panels:get_webui_browser_panel_factory'],
         'pyri.plugins.webui_browser_component': ['pyri-webui-browser=pyri.webui_browser.components.standard_components:get_webui_browser_component_factory'],
+        'pyri.plugins.webui_browser_plugin_init': ['pyri-webui-browser=pyri.webui_browser.webui_browser_plugin_init:get_webui_browser_plugin_init_factory'],
     }
 )
