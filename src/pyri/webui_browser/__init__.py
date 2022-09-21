@@ -89,7 +89,7 @@ class PyriWebUIBrowser:
 
     async def load_plugin_default_panels(self, layout_config = "default"):
     
-        default_panels = get_all_webui_default_browser_panels()
+        default_panels = get_all_webui_default_browser_panels(layout_config)
         for _, panel_config in default_panels:
             await self.layout.add_panel(panel_config)
 
@@ -135,7 +135,10 @@ class PyriWebUIBrowser:
             try:
                 await self._layout.select_panel("welcome")
             except:
-                pass
+                traceback.print_exc()
+            
+            
+            await self.hide_loading_screen()
 
             while True:
                 await RRN.AsyncSleep(0.1,None)
@@ -233,4 +236,8 @@ class PyriWebUIBrowser:
 
         finally:
             self._device_infos_update_running = False
+
+    async def hide_loading_screen(self):
+        await RRN.AsyncSleep(0.25,None)
+        js.jQuery("#loading_screen").fadeOut()
         

@@ -224,15 +224,20 @@ class PyriGoldenLayout(PyriVue):
 
             self._layout.addItem(to_js2(component_item_config))
 
+            await self.next_tick()
+            await self.next_tick()
+
             
 
         #self._layout.root.contentItems[0].addChild(to_js2(panel_config))
 
 
     async def select_panel(self, panel_id: str):
-        p = self._layout.root.contentItems[0].getItemsById(panel_id)
-        if len(p) > 0:
-            p[0].parent.setActiveContentItem(p[0])
+        items = self._layout.root.getAllContentItems()
+        for i in range(len(items)):
+            p = items[i]
+            if getattr(p,"id") == panel_id:
+                p.parent.setActiveComponentItem(p)
 
     def get_panel_pyobj(self, panel_id):
         return self.get_ref_pyobj('goldenlayout_vue_panel_component_' + panel_id, 0)
