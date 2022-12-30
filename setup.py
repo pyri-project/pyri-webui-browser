@@ -11,7 +11,9 @@ setup(
     packages=find_namespace_packages(where='src'),
     include_package_data=True,
     package_data = {
-        'pyri.webui_browser.panels': ['*.html']
+        'pyri.webui_browser.panels': ['*.html'],
+        'pyri.webui_browser.components': ['*.html'],
+        'pyri.webui_browser': ['*.html']
     },
     zip_safe=False,
     install_requires=[
@@ -20,5 +22,7 @@ setup(
     ],
     entry_points = {
         'pyri.plugins.webui_browser_panel': ['pyri-webui-browser=pyri.webui_browser.panels.standard_panels:get_webui_browser_panel_factory'],
+        'pyri.plugins.webui_browser_component': ['pyri-webui-browser=pyri.webui_browser.components.standard_components:get_webui_browser_component_factory'],
+        'pyri.plugins.webui_browser_plugin_init': ['pyri-webui-browser=pyri.webui_browser.webui_browser_plugin_init:get_webui_browser_plugin_init_factory'],
     }
 )

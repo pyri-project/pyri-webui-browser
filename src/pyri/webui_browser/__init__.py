@@ -1,6 +1,7 @@
 from typing import Dict, Any
-from .golden_layout import PyriGoldenLayout
-from .plugins.panel import get_all_webui_browser_panels_infos, add_webui_browser_panel
+from .plugins.panel import get_all_webui_browser_panels_infos, get_all_webui_default_browser_panels
+from .plugins.component import register_all_webui_browser_components
+from .plugins.plugin_init import plugin_init_all_webui_plugins
 import js
 from RobotRaconteur.Client import *
 from pyri.device_manager_client import DeviceManagerClient
@@ -8,6 +9,9 @@ import traceback
 from pyri.util.robotraconteur import robotraconteur_data_to_plain
 import jinja2
 from.js_loader import JsLoader
+import importlib_resources
+from .util import to_js2
+import time
 
 
 def fill_rr_url_template(url):
@@ -22,7 +26,7 @@ class PyriWebUIBrowser:
     def __init__(self, loop: "RobotRaconteur.WebLoop", config: Dict[str,Any]):
         self._loop = loop
         self._config = config
-        self._layout = PyriGoldenLayout(self)
+        self._layout = None
         self._seqno = 0
         self._device_manager = DeviceManagerClient(fill_rr_url_template(config["device_manager_url"]),autoconnect=False,tcp_ipv4_only=True)
         self._devices_states_obj_sub = None
@@ -34,6 +38,8 @@ class PyriWebUIBrowser:
         self._device_infos_update_running = False
 
         self.js_loader = JsLoader()
+
+        self._vue_core = None
         
         def set_devices_states(state, devices_states):
             state.devices_states = devices_states
@@ -57,7 +63,10 @@ class PyriWebUIBrowser:
 
     def create_task(self, task):
         async def create_task_w():
-            await task
+            try:
+                await task
+            except:
+                traceback.print_exc()
         self._loop.create_task(create_task_w())
 
     @property
@@ -72,25 +81,39 @@ class PyriWebUIBrowser:
     def device_manager(self):
         return self._device_manager
 
-    async def load_plugin_panels(self):
-        all_panels_u = get_all_webui_browser_panels_infos()
-        all_panels = dict()
-        for u in all_panels_u.values():
-            all_panels.update(u)
+    def register_plugin_components(self):
+        register_all_webui_browser_components()
 
-        all_panels_sorted = sorted(all_panels.values(), key=lambda x: x.priority)
+    async def init_plugins(self):
+        await plugin_init_all_webui_plugins(self)
 
-        for p in all_panels_sorted:
-            await add_webui_browser_panel(p.panel_type, self, self._layout.layout_container)
+    async def load_plugin_default_panels(self, layout_config = "default"):
+    
+        default_panels = get_all_webui_default_browser_panels(layout_config)
+        for _, panel_config in default_panels:
+            await self.layout.add_panel(panel_config)
 
     async def run(self):
         try:
             print("Running PyRI WebUI Browser")
 
-            self._layout.init_golden_layout()
-            js.jQuery.find("#menuContainer")[0].removeAttribute('hidden')
+            #Prevent navigation away from page
+            js.window.onbeforeunload = js.Function.new("return \"\"")
 
-            await self.load_plugin_panels()
+            await self.init_plugins()
+
+            from .core_app_vue import PyriWebUICoreAppVue
+            self._vue_core = PyriWebUICoreAppVue(self, "#pyri-webui-browser-app")
+
+            self.register_plugin_components()
+
+            from . import golden_layout
+            golden_layout.register_vue_components()
+
+            await self._vue_core.add_component("pyri-golden-layout", "pyri-golden-layout")
+            self._layout = await self._vue_core.get_ref_pyobj_wait("pyri-golden-layout", index = 0)
+
+            await self.load_plugin_default_panels("default")
 
             for i in range(100):
                 if i > 50:
@@ -109,8 +132,13 @@ class PyriWebUIBrowser:
             self._devices_states_obj_sub = self._device_manager.get_device_subscription("devices_states")
             
             # Run infinite update loop
-
-            self._layout.select_panel("welcome")
+            try:
+                await self._layout.select_panel("welcome")
+            except:
+                traceback.print_exc()
+            
+            
+            await self.hide_loading_screen()
 
             while True:
                 await RRN.AsyncSleep(0.1,None)
@@ -209,3 +237,7 @@ class PyriWebUIBrowser:
         finally:
             self._device_infos_update_running = False
 
+    async def hide_loading_screen(self):
+        await RRN.AsyncSleep(0.25,None)
+        js.jQuery("#loading_screen").fadeOut()
+        

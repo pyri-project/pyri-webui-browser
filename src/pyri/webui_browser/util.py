@@ -39,7 +39,8 @@ def device_state_flags(devices_states, local_name):
     return " ".join(state_flags)
 
 def get_devices_with_type(core, device_types):
-
+    if isinstance(device_types,str):
+        device_types = [device_types]
     robot_device_names = []
 
     for local_name in core.active_device_names:
@@ -58,8 +59,10 @@ def get_devices_with_type(core, device_types):
                 robot_device_names.append(local_name)
                 continue           
         except AttributeError:
+            traceback.print_exc()
             continue
         except KeyError:
+            traceback.print_exc()
             continue
 
     return robot_device_names

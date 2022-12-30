@@ -2,7 +2,7 @@
     <div>
         <b-button @click="save"><i class="fa fa-save"></i> Save</b-button>
         <b-button @click="reload"><i class="fa fa-sync"></i> Reload</b-button>
-        <b-button variant="success" @click="run"><i class="fa fa-play"></i> Run</b-button>
+        <b-button variant="success" @click="run_btn"><i class="fa fa-play"></i> Run</b-button>
         <b-button variant="info" @click="step_one"><i class="fas fa-level-down-alt"></i> Step One</b-button>
         <b-button @click="pause"><i class="fas fa-pause"></i> Pause</b-button>
         <b-button variant="danger" @click="stop_all"><i class="fa fa-stop"></i> Stop All</b-button> 
@@ -12,11 +12,13 @@
     </div>
     <div style="flex: 1;" class="overflow-auto">
         <div style="max-width:500px;padding:20px;margin:auto">
-            <b-card style="border-radius:10px;margin:10px;padding:0px" id="program_main_start_marker">
+            <b-card style="border-radius:10px;margin:10px;padding:0px" ref="program_main_start_marker" 
+                :body-class="'card-header ' + start_marker_highlight_class">
                 <h3 class="text-center">Start</h3>
             </b-card>
-            <div id="program_master_steps">
-                <b-card v-for="(s,index) in program_steps" :key="s.card_id" :id="s.card_id" :header="s.name" style="border-radius:10px;margin:10px">
+            <div ref="program_master_steps">
+                <b-card v-for="(s,index) in program_steps" :key="s.card_id" :ref="s.card_id" :header="s.name" 
+                  :header-class="'card-header ' + s.step_highlight_class" style="border-radius:10px;margin:10px">
                     <table class="table-borderless program_main_steps_table">
                     <tr><td class="font-weight-bold">Procedure:</td><td>{{ s.procedure }}</td></tr>
                     <tr><td class="font-weight-bold">Procedure args:</td><td>{{ s.procedure_args }}</td></tr>

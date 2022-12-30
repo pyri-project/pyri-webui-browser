@@ -1,16 +1,16 @@
-from typing import List, Dict, Callable, Any, NamedTuple, TYPE_CHECKING
+from typing import List, Dict, Callable, Any, NamedTuple, TYPE_CHECKING, Tuple
 from pyri.plugins import util as plugin_util
 
 if TYPE_CHECKING:
-    from .. import PyriWebUIBrowser
+    from ..golden_layout import PyriGoldenLayoutPanelConfig
 
 class PyriWebUIBrowserPanelInfo(NamedTuple):
     title: str
+    description: str
     panel_type: str
+    panel_category: str
+    component_type: str
     priority: int
-
-class PyriWebUIBrowserPanelBase:
-    pass
 
 class PyriWebUIBrowserPanelPluginFactory:
     def __init__(self):
@@ -22,8 +22,8 @@ class PyriWebUIBrowserPanelPluginFactory:
     def get_panels_infos(self) -> Dict[str,PyriWebUIBrowserPanelInfo]:
         return []
 
-    async def add_panel(self, panel_type: str, core: "PyriWebUIBrowser", parent_element: Any) -> PyriWebUIBrowserPanelBase:
-        raise NotImplementedError()
+    def get_default_panels(self, layout_config: str = "default") -> List[Tuple[PyriWebUIBrowserPanelInfo,"PyriGoldenLayoutPanelConfig"]]:
+        pass
 
 def get_webui_browser_panel_factories() -> List[PyriWebUIBrowserPanelPluginFactory]:
     return plugin_util.get_plugin_factories("pyri.plugins.webui_browser_panel")
@@ -35,13 +35,10 @@ def get_all_webui_browser_panels_infos() -> Dict[str,Any]:
         ret[factory.get_plugin_name()] = factory.get_panels_infos()
     return ret
 
-async def add_webui_browser_panel(panel_type: str, core: "PyriWebUIBrowser", parent_element: Any) -> Dict[str,Any]:
-    
+def get_all_webui_default_browser_panels(layout_config = "default") -> List[Tuple[PyriWebUIBrowserPanelInfo,"PyriGoldenLayoutPanelConfig"]]:
+    default_panels = []
     factories = get_webui_browser_panel_factories()
     for factory in factories:
-        infos = factory.get_panels_infos()
-        if panel_type in infos:
-            return await factory.add_panel(panel_type, core, parent_element)
-
-    assert False, f"Unknown panel_type \"{panel_type}\" specified"
-    
+        default_panels.extend(factory.get_default_panels(layout_config))
+    default_panels_sorted = sorted(default_panels, key=lambda x: x[0].priority)
+    return default_panels_sorted
